@@ -1,0 +1,48 @@
+name: Bug Report
+description: Create a report to help us improve eero-stats
+title: "[BUG]: "
+labels: ["bug"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        Please fill out as much information as possible to help us reproduce the issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us what you expected to happen instead.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Go Version or Docker Version
+      description: What version of Go did you compile this with? If using Docker, what image digest/version?
+      placeholder: e.g., go version go1.22.0 linux/amd64 OR Docker version 24.x
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Server / OS Environment
+      description: Where are you running eero-stats?
+      placeholder: e.g., Ubuntu 22.04, TrueNAS SCALE 23.10, Proxmox
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Panics
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+    validations:
+      required: true

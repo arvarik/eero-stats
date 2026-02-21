@@ -1,0 +1,28 @@
+name: Feature Request
+description: Suggest an idea or a new API mapping for eero-stats
+title: "[FEATURE]: "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for utilizing eero-stats! Please fill out the form below to propose a new feature.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: A clear and concise description of what the feature is and how it should work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Home Lab Use Case
+      description: Why do you need this feature? How does it improve your workflow or home lab visibility?
+      placeholder: e.g., I want to map the Guest Network status so I can dynamically switch IoT networks...
+    validations:
+      required: true
