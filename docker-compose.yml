@@ -1,0 +1,52 @@
+services:
+  eero-stats:
+    build:
+      context: ..
+      dockerfile: eero-stats/Dockerfile
+    container_name: eero-stats
+    depends_on:
+      - influxdb
+    env_file:
+      - .env
+    volumes:
+      - ./data/app:/app/data
+    restart: unless-stopped
+    # Allow mapping for 2FA setup via docker attach
+    tty: true
+    stdin_open: true
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb2
+    environment:
+      # Auto-bootstrap variables
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: secretpassword
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG:-eero-stats-org}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET:-eero}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN:-my-super-secret-auth-token-123}
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards/config:ro
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    env_file:
+      - .env
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - influxdb
+    restart: unless-stopped
