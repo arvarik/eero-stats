@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"eero-stats/config"
+	"eero-stats/internal/config"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"

@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"eero-stats/auth"
-	"eero-stats/config"
-	"eero-stats/db"
-	"eero-stats/poller"
+	"eero-stats/internal/auth"
+	"eero-stats/internal/config"
+	"eero-stats/internal/db"
+	"eero-stats/internal/poller"
 )
 
 func main() {

@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"eero-stats/config"
+	"eero-stats/internal/config"
 
 	"github.com/arvarik/eero-go/eero"
 )

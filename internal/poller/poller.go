@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"eero-stats/db"
+	"eero-stats/internal/db"
 
 	"github.com/arvarik/eero-go/eero"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"

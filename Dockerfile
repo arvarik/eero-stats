@@ -25,7 +25,7 @@ WORKDIR /build/eero-stats
 
 # Download dependencies and build
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app-binary .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app-binary ./cmd/eero-stats
 
 # -- Stage 2: Runtime --
 FROM alpine:latest
