@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"eero-stats/internal/auth"
-	"eero-stats/internal/config"
-	"eero-stats/internal/db"
-	"eero-stats/internal/poller"
+	"github.com/arvarik/eero-stats/internal/auth"
+	"github.com/arvarik/eero-stats/internal/config"
+	"github.com/arvarik/eero-stats/internal/db"
+	"github.com/arvarik/eero-stats/internal/poller"
 )
 
 func main() {

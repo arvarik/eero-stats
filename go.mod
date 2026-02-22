@@ -1,4 +1,4 @@
-module eero-stats
+module github.com/arvarik/eero-stats
 
 go 1.22.0
 
