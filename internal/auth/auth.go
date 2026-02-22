@@ -93,7 +93,11 @@ func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) 
 		return fmt.Errorf("initiating login: %w", err)
 	}
 
-	fmt.Printf("Verification code sent to %s. Enter verification code: ", identifier)
+	fmt.Println()
+	fmt.Println("========================================")
+	fmt.Printf("  Verification code sent to %s\n", identifier)
+	fmt.Println("========================================")
+	fmt.Print("Enter verification code: ")
 
 	// Step 2: Verify code
 	code, err := reader.ReadString('\n')

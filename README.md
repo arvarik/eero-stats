@@ -51,6 +51,13 @@ Launch the multi-container stack which includes the daemon, InfluxDB, and Grafan
 make docker-up
 ```
 
+> [!NOTE]
+> **Linux Users:** If you encounter a `permission denied` error when connecting to the Docker daemon socket, you need to add your user to the `docker` group. This is not required on macOS, where Docker Desktop handles permissions automatically.
+> ```bash
+> sudo usermod -aG docker $USER
+> ```
+> You must **log out and back in** (or reboot) for the group change to take effect.
+
 ### 3. Interactive Authentication (First Boot Only)
 Since this daemon runs locally against Eero's Cloud API, the first time you boot `eero-stats`, you must supply a 2-step verification code from your email/phone. The Docker container stays open to `stdin`:
 
