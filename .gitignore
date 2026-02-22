@@ -1,4 +1,5 @@
 # Binaries
+/bin/
 /eero-stats
 *.exe
 *.exe~
