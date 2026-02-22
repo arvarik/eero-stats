@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/arvarik/eero-stats/internal/db"
@@ -138,6 +137,17 @@ func (p *Poller) writeNetworkSpeed(net *eero.NetworkDetails) {
 		"speed_up_mbps":   net.Speed.Up.Value,
 	}
 
+	if net.WanIP != "" {
+		fields["wan_ip"] = net.WanIP
+	}
+	if net.GatewayIP != "" {
+		fields["gateway_ip"] = net.GatewayIP
+	}
+	fields["ipv6_upstream"] = net.IPv6Upstream
+	fields["dhcp_mode"] = net.DHCP.Mode
+	fields["dns_caching_enabled"] = net.DNS.Caching
+	fields["adblock_enabled"] = net.PremiumDNS.AdBlockSettings.Enabled
+
 	pt := influxdb2.NewPoint("eero_network", tags, fields, time.Now())
 	p.influx.WriteAPI.WritePoint(pt)
 }
@@ -149,14 +159,20 @@ func (p *Poller) writeNodes(net *eero.NetworkDetails) {
 			"serial": node.Serial,
 			"model":  node.Model,
 		}
-		if node.Location != nil {
-			tags["location"] = *node.Location
+		if node.Location != "" {
+			tags["location"] = node.Location
 		}
 
 		fields := map[string]interface{}{
 			"status": node.Status,
-			// ConnectedClients is not standard in the struct but requested by user
-			// In mapping we often have to find or mock if missing, we'll map what we have
+		}
+
+		fields["connected_clients"] = node.ConnectedClientsCount
+		fields["mesh_quality_bars"] = node.MeshQualityBars
+		fields["wired"] = node.Wired
+		fields["using_wan"] = node.UsingWan
+		if node.OSVersion != "" {
+			fields["os_version"] = node.OSVersion
 		}
 
 		pt := influxdb2.NewPoint("eero_nodes", tags, fields, now)
@@ -175,9 +191,9 @@ func (p *Poller) writeDevices(devices []eero.Device) {
 			tags["nickname"] = *d.Nickname
 		}
 
-		// Map 'is_guest' if available in profile (heuristic)
+		// Map 'is_guest' directly from struct
 		isGuest := "false"
-		if d.Profile != nil && strings.ToLower(d.Profile.Name) == "guest" {
+		if d.IsGuest {
 			isGuest = "true"
 		}
 		tags["is_guest"] = isGuest
@@ -186,18 +202,18 @@ func (p *Poller) writeDevices(devices []eero.Device) {
 			"connected": d.Connected,
 		}
 
-		// Handle missing custom fields requested by user:
-		// eero-go `Device` does not surface `signal_dbm` or `rx_bitrate` natively
-		// via standard json types in our interface (it provides Usage.Download/Upload).
-		// Wait, looking at eero-go struct, `Usage` has `Download`/`Upload`.
-		// If these strings are in `Usage.Units`, we can strip or just use `Usage` values natively.
+		fields["score_bars"] = d.Connectivity.ScoreBars
+		fields["signal"] = d.Connectivity.Signal
+		fields["rx_bitrate"] = d.Connectivity.RxBitrate
+		fields["channel"] = d.Channel
+
+		if d.VlanID != nil {
+			fields["vlan_id"] = *d.VlanID
+		}
 
 		if d.Usage != nil {
 			fields["usage_download"] = d.Usage.Download
 			fields["usage_upload"] = d.Usage.Upload
-			// The user specific requested: signal_dbm, rx_bitrate.
-			// If these exist in raw map we'd need them mapped to the struct,
-			// but eero-go struct does not contain them. We'll add what we can based on the struct.
 		}
 
 		pt := influxdb2.NewPoint("eero_devices", tags, fields, now)

@@ -3,7 +3,7 @@ module github.com/arvarik/eero-stats
 go 1.22.0
 
 require (
-	github.com/arvarik/eero-go v1.0.1
+	github.com/arvarik/eero-go v1.1.0
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 	github.com/joho/godotenv v1.5.1
 )
