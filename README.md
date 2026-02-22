@@ -64,6 +64,9 @@ Upon success, `eero-stats` writes your authorization token to `/data/app/.eero_s
 
 **Detaching:** Press `CTRL-P` followed by `CTRL-Q` to safely detach your terminal and let the daemon continue polling in the background!
 
+> [!NOTE]
+> **Session Lifecycle:** The Eero API issues a long-lived user token during 2FA that securely proxies all polling activity and bypasses repeated login requests. This cookie (`.eero_session.json`) typically remains valid for **30 days**. If the daemon starts logging `401 Unauthorized` errors, it means your session has expired. To renew it, simply stop the container (`make docker-down`), delete the `.eero_session.json` file inside `./data/app/`, and re-run steps 2 and 3 above to catch a fresh 2FA challenge!
+
 ### 4. View Grafana
 Open Grafana running locally at `http://<your-ip>:3000`. You can login using the defaults (`admin/admin`). The "Eero Overview" dashboard is automatically provisioned—no setup required.
 
