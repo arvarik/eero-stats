@@ -18,12 +18,12 @@ The data aggregation lifecycle automatically mitigates IP bans via tiered, inter
 
 ```mermaid
 flowchart TD
-    UserCLI([CLI / Initial 2FA]) -->|Interactive OTP| SessionFile{`.eero_session.json` cache}
+    UserCLI([CLI / Initial 2FA]) -->|Interactive OTP| SessionFile{eero_session cache}
     SessionFile -->|Loads Token| GoPoller[Go eero-stats Daemon]
     
-    subgraph Engine[Core Poller (Go 1.22)]
-        GoPoller -->|Fast Loop (3m)| CorePoll[Poll Devices & Node Connectivity]
-        GoPoller -->|Slow Loop (12h)| ISPPoll[Poll ISP Max Speeds]
+    subgraph Engine [Core Poller Go 1.22]
+        GoPoller -->|Fast Loop 3m| CorePoll[Poll Devices and Node Connectivity]
+        GoPoller -->|Slow Loop 12h| ISPPoll[Poll ISP Max Speeds]
     end
     
     Engine -->|NVMe Async Batch| Influx[(InfluxDB v2)]
