@@ -21,7 +21,7 @@ flowchart TD
     UserCLI([CLI / Initial 2FA]) -->|Interactive OTP| SessionFile{eero_session cache}
     SessionFile -->|Loads Token| GoPoller[Go eero-stats Daemon]
     
-    subgraph Engine [Core Poller Go 1.22]
+    subgraph Engine ["Core Poller Go 1.22"]
         GoPoller -->|Fast Loop 3m| CorePoll[Poll Devices and Node Connectivity]
         GoPoller -->|Slow Loop 12h| ISPPoll[Poll ISP Max Speeds]
     end
