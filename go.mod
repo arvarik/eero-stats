@@ -1,6 +1,6 @@
 module eero-stats
 
-go 1.25.7
+go 1.22.0
 
 require (
 	github.com/arvarik/eero-go v1.0.0
