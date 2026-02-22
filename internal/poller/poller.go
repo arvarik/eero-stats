@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"strconv"
 	"strings"
 	"time"
 
@@ -233,19 +232,6 @@ func (p *Poller) withRetry(ctx context.Context, op func() error) error {
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %w", maxRetries, err)
-}
-
-// stripStringMeasurement is a helper to clean JSON strings like "-57 dBm" -> float(-57.0)
-func stripStringMeasurement(raw, suffix string) float64 {
-	clean := strings.TrimSpace(strings.TrimSuffix(raw, suffix))
-	if clean == "" {
-		return 0
-	}
-	val, err := strconv.ParseFloat(clean, 64)
-	if err != nil {
-		return 0
-	}
-	return val
 }
 
 // Ensure the unused `write` import from standard snippet doesn't break build
