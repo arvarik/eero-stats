@@ -43,8 +43,8 @@ func (p *Poller) Start(ctx context.Context) {
 	defer slowTicker.Stop()
 
 	// Trigger an immediate initial poll of both
-	p.pollFast(ctx)
-	p.pollSlow(ctx)
+	p.safePollFast(ctx)
+	p.safePollSlow(ctx)
 
 	for {
 		select {
@@ -52,11 +52,31 @@ func (p *Poller) Start(ctx context.Context) {
 			slog.Info("Poller received cancellation signal, stopping loops")
 			return
 		case <-fastTicker.C:
-			p.pollFast(ctx)
+			p.safePollFast(ctx)
 		case <-slowTicker.C:
-			p.pollSlow(ctx)
+			p.safePollSlow(ctx)
 		}
 	}
+}
+
+// safePollFast wraps the device execution loop to swallow and recover panics
+func (p *Poller) safePollFast(ctx context.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Panic recovered in Fast Poll. Preventing container crash.", "panic", r)
+		}
+	}()
+	p.pollFast(ctx)
+}
+
+// safePollSlow wraps the ISP execution loop to swallow and recover panics
+func (p *Poller) safePollSlow(ctx context.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Error("Panic recovered in Slow Poll. Preventing container crash.", "panic", r)
+		}
+	}()
+	p.pollSlow(ctx)
 }
 
 // --- Polling Loops ---

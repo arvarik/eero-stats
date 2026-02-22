@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -65,12 +66,21 @@ func main() {
 	defer luxClientShutdown(ctx, influxClient)
 
 	// 5. Start the Polling Daemon
+	var wg sync.WaitGroup
 	daemon := poller.NewPoller(eeroClient, influxClient, networkURL)
-	go daemon.Start(ctx)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		daemon.Start(ctx)
+	}()
 
 	// Block until graceful shutdown via context cancellation
 	slog.Info("Application initialized and polling started")
 	<-ctx.Done()
+
+	slog.Info("Context cancelled, waiting for daemon graceful loop termination...")
+	wg.Wait()
 
 	slog.Info("Main daemon loop exiting")
 }
