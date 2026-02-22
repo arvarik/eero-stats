@@ -35,12 +35,10 @@ flowchart TD
 ## 🚀 Quick Start (Docker Compose)
 
 ### 1. Clone & Configure
-First, clone the daemon and the `eero-go` library side-by-side (due to relative Go module dependencies during build).
+First, clone the daemon repository:
 
 ```bash
-git clone https://github.com/arvarik/eero-go.git
 git clone https://github.com/arvarik/eero-stats.git
-
 cd eero-stats
 cp .env.example .env
 ```

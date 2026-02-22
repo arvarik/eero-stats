@@ -1,27 +1,18 @@
 # ==========================================
 # Eero-Stats Dockerfile
 # ==========================================
-# IMPORTANT BUILD INSTRUCTIONS:
-# Because `eero-stats` relies on a local relative module (`../eero-go`), 
-# this image MUST be built from the parent directory to include both folders 
-# in the Docker build context.
-#
-# Run this command from the directory ABOVE eero-stats:
-# docker build -f eero-stats/Dockerfile -t eero-stats .
-# ==========================================
 
 # -- Stage 1: Build --
 FROM golang:1.22-alpine AS builder
 
 WORKDIR /build
 
-# Copy the dependency module first
-COPY eero-go/ ./eero-go/
+# Copy go mod and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Copy the main application module
-COPY eero-stats/ ./eero-stats/
-
-WORKDIR /build/eero-stats
+# Copy source code
+COPY . .
 
 # Download dependencies and build
 RUN go mod download

@@ -1,8 +1,6 @@
 services:
   eero-stats:
-    build:
-      context: ..
-      dockerfile: eero-stats/Dockerfile
+    build: .
     container_name: eero-stats
     depends_on:
       - influxdb

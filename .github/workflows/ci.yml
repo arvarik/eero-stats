@@ -15,16 +15,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Because eero-go is a relative local module in this workspace structure, 
-      # we need to checkout that repository alongside eero-stats to satisfy go.mod
-      # In a real deployed setup, if they are separate repos, you'd clone both.
-      # Assuming eero-go is located one directory up relative to eero-stats in the monorepo:
-      - name: Checkout eero-go
-        uses: actions/checkout@v4
-        with:
-          repository: arvarik/eero-go
-          path: ../eero-go
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
