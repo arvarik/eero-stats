@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Pre-commit hook to run golangci-lint
+
+echo "=> Running golangci-lint before commit..."
+
+# Execute the lint target from the Makefile
+make lint
+
+# Capture the exit code
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "❌ ERROR: golangci-lint failed! Please fix the styling errors above."
+    echo "To bypass this check (not recommended), use 'git commit --no-verify'."
+    exit 1
+fi
+
+echo "✅ Linting passed. Proceeding with commit..."
+exit 0

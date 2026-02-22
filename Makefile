@@ -29,6 +29,12 @@ docker-down:
 	@echo "=> Stopping Docker Compose environment..."
 	docker compose down
 
+setup:
+	@echo "=> Configuring local git hooks..."
+	git config core.hooksPath .githooks
+	chmod +x .githooks/*
+	@echo "✅ Pre-commit hooks installed."
+
 clean:
 	@echo "=> Cleaning up build artifacts..."
 	rm -rf $(BIN_DIR)

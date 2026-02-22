@@ -90,6 +90,7 @@ All settings are securely injected via `.env`.
 
 Want to test local changes without standing up the entire Docker cluster? `eero-stats` has an open-source friendly `Makefile`.
 
+0. **First Time Setup**: Run `make setup`. This configures Git to use our local `.githooks` directory, ensuring `golangci-lint` automatically validates your code before any commits are processed!
 1. **Hygiene**: Run `make tidy` to format your Go files and clean `go.mod`.
 2. **Linting**: Run `make lint` to enforce standard coding conventions using `golangci-lint`.
 3. **Build**: Run `make build` to locally compile the daemon into `.bin/eero-stats`.
