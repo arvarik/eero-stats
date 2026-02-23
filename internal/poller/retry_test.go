@@ -5,14 +5,10 @@ import (
 	"errors"
 	"testing"
 	"time"
-
-	"github.com/arvarik/eero-stats/internal/db"
 )
 
 func newTestPoller() *Poller {
-	return &Poller{
-		influx: &db.InfluxClient{},
-	}
+	return &Poller{} // only withRetry is exercised; no client/influx needed
 }
 
 func TestWithRetry_SuccessOnFirstAttempt(t *testing.T) {

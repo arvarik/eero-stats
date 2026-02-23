@@ -19,18 +19,6 @@ import (
 	"github.com/arvarik/eero-go/eero"
 )
 
-// sessionFilePath is the path where the Eero session token is cached.
-// It defaults to the Docker container path and falls back to a local
-// development path if the container directory doesn't exist.
-var sessionFilePath = "/app/data/.eero_session.json"
-
-func init() {
-	// Fallback to local path if not running inside the Docker container.
-	if _, err := os.Stat("/app/data"); os.IsNotExist(err) {
-		sessionFilePath = "data/app/.eero_session.json"
-	}
-}
-
 type sessionData struct {
 	UserToken string `json:"user_token"`
 }
@@ -44,7 +32,7 @@ func Init(ctx context.Context, cfg *config.Config) (*eero.Client, error) {
 	}
 
 	// 1. Check if session exists and is valid.
-	if err := restoreSession(client); err == nil {
+	if err := restoreSession(client, cfg.EeroSessionPath); err == nil {
 		slog.Info("Restored cached session. Validating...")
 		if _, err := client.Account.Get(ctx); err == nil {
 			slog.Info("Eero session is valid")
@@ -56,15 +44,15 @@ func Init(ctx context.Context, cfg *config.Config) (*eero.Client, error) {
 	}
 
 	// 2. Interactive CLI flow.
-	if err := interactiveLogin(ctx, client, cfg.EeroLogin); err != nil {
+	if err := interactiveLogin(ctx, client, cfg.EeroLogin, cfg.EeroSessionPath); err != nil {
 		return nil, fmt.Errorf("interactive login failed: %w", err)
 	}
 
 	return client, nil
 }
 
-func restoreSession(client *eero.Client) error {
-	data, err := os.ReadFile(sessionFilePath)
+func restoreSession(client *eero.Client, path string) error {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -81,7 +69,7 @@ func restoreSession(client *eero.Client) error {
 	return client.SetSessionCookie(sess.UserToken)
 }
 
-func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) error {
+func interactiveLogin(ctx context.Context, client *eero.Client, loginID, path string) error {
 	reader := bufio.NewReader(os.Stdin)
 
 	// Step 1: Login challenge.
@@ -119,10 +107,10 @@ func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) 
 	slog.Info("Authenticated successfully!")
 
 	// 3. Save the session to disk for future restarts.
-	if err := saveSession(loginResp.UserToken); err != nil {
-		slog.Warn("Could not cache session to disk", "error", err, "file", sessionFilePath)
+	if err := saveSession(path, loginResp.UserToken); err != nil {
+		slog.Warn("Could not cache session to disk", "error", err, "file", path)
 	} else {
-		slog.Info("Session cached securely", "file", sessionFilePath)
+		slog.Info("Session cached securely", "file", path)
 	}
 
 	return nil
@@ -130,7 +118,7 @@ func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) 
 
 // saveSession persists the user token to disk, creating the parent directory
 // if it doesn't already exist.
-func saveSession(userToken string) error {
+func saveSession(path, userToken string) error {
 	sess := sessionData{UserToken: userToken}
 	data, err := json.MarshalIndent(sess, "", "  ")
 	if err != nil {
@@ -139,10 +127,10 @@ func saveSession(userToken string) error {
 
 	// Ensure the parent directory exists (e.g., first run before Docker
 	// volume is fully initialized).
-	dir := filepath.Dir(sessionFilePath)
+	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("creating session directory %s: %w", dir, err)
 	}
 
-	return os.WriteFile(sessionFilePath, data, 0600)
+	return os.WriteFile(path, data, 0600)
 }
