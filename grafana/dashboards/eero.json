@@ -449,13 +449,25 @@
           },
           "mappings": [
             {
+              "type": "value",
               "options": {
-                "match": "exact",
-                "pattern": "green"
-              },
-              "type": "regex",
-              "text": "Online",
-              "color": "green"
+                "green": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Online"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "Offline"
+                }
+              }
             }
           ],
           "thresholds": {
@@ -464,6 +476,10 @@
               {
                 "color": "red",
                 "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
               }
             ]
           },
@@ -570,7 +586,8 @@
         }
       ],
       "title": "Mesh Backhaul Quality",
-      "type": "bargauge"
+      "type": "bargauge",
+      "description": "Eero mesh backhaul quality score from 1\u20135 bars.\n\n\u2022 5 bars \u2014 Excellent: strong direct backhaul link\n\u2022 4 bars \u2014 Good: reliable connection, minimal impact\n\u2022 3 bars \u2014 Fair: acceptable but consider repositioning\n\u2022 2 bars \u2014 Poor: high latency likely, reposition node\n\u2022 1 bar  \u2014 Critical: node is barely reachable"
     },
     {
       "datasource": {
@@ -646,7 +663,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"frequency\", \"frequency_unit\"])\n  |> count()\n  |> map(fn: (r) => ({\n       r with frequency:\n         if r.frequency == \"wired\" then \"Wired\"\n         else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"frequency\", \"frequency_unit\"])\n  |> count()\n  |> map(fn: (r) => ({\n       r with frequency:\n         if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\"\n         else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))",
           "refId": "A",
           "datasource": {
             "type": "influxdb",
@@ -655,7 +672,12 @@
         }
       ],
       "title": "Band Distribution",
-      "type": "piechart"
+      "type": "piechart",
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "${__field.labels.frequency}"
+        }
+      }
     },
     {
       "datasource": {
