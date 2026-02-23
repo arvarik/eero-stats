@@ -12,7 +12,7 @@ import (
 
 // resolveDeviceName returns the best human-readable name for a device,
 // preferring nickname > hostname > MAC address.
-func resolveDeviceName(d eero.Device) string {
+func resolveDeviceName(d *eero.Device) string {
 	if d.Nickname != nil && *d.Nickname != "" {
 		return *d.Nickname
 	}
@@ -34,12 +34,13 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 	// Build a lookup map from node location to a friendly "Location - Model" name.
 	nodeMap := make(map[string]string)
 	if net != nil {
-		for _, n := range net.Eeros.Data {
-			nodeMap[n.Location] = fmt.Sprintf("%s - %s", n.Location, n.Model)
+		for i := range net.Eeros.Data {
+			nodeMap[net.Eeros.Data[i].Location] = fmt.Sprintf("%s - %s", net.Eeros.Data[i].Location, net.Eeros.Data[i].Model)
 		}
 	}
 
-	for _, d := range devices {
+	for i := range devices {
+		d := &devices[i]
 		deviceName := resolveDeviceName(d)
 
 		nodeName := d.Source.Location
@@ -99,7 +100,7 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 		}
 
 		pt := influxdb2.NewPoint("eero_client_timeseries", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -107,7 +108,8 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 // heartbeat, power source, etc.) to InfluxDB.
 func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 	now := time.Now()
-	for _, node := range net.Eeros.Data {
+	for i := range net.Eeros.Data {
+		node := &net.Eeros.Data[i]
 		nodeName := fmt.Sprintf("%s - %s", node.Location, node.Model)
 		tags := map[string]string{
 			"serial":    node.Serial,
@@ -129,7 +131,7 @@ func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 		}
 
 		pt := influxdb2.NewPoint("eero_node_timeseries", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -146,7 +148,7 @@ func (p *Poller) writeNetworkHealth(net *eero.NetworkDetails) {
 	}
 
 	pt := influxdb2.NewPoint("eero_network_health", tags, fields, time.Now())
-	p.influx.WriteAPI.WritePoint(pt)
+	p.influx.WritePoint(pt)
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +159,8 @@ func (p *Poller) writeNetworkHealth(net *eero.NetworkDetails) {
 // version, ethernet addresses, etc.) to InfluxDB.
 func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 	now := time.Now()
-	for _, node := range net.Eeros.Data {
+	for i := range net.Eeros.Data {
+		node := &net.Eeros.Data[i]
 		nodeName := fmt.Sprintf("%s - %s", node.Location, node.Model)
 		tags := map[string]string{
 			"serial":    node.Serial,
@@ -182,7 +185,7 @@ func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 		}
 
 		pt := influxdb2.NewPoint("eero_node_metadata", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -190,7 +193,8 @@ func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 // VLAN, manufacturer, etc.) to InfluxDB.
 func (p *Poller) writeClientMetadata(devices []eero.Device) {
 	now := time.Now()
-	for _, d := range devices {
+	for i := range devices {
+		d := &devices[i]
 		deviceName := resolveDeviceName(d)
 
 		tags := map[string]string{
@@ -228,7 +232,7 @@ func (p *Poller) writeClientMetadata(devices []eero.Device) {
 		}
 
 		pt := influxdb2.NewPoint("eero_client_metadata", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -242,8 +246,8 @@ func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 		}
 
 		var macs []string
-		for _, dev := range prof.Devices {
-			macs = append(macs, dev.MAC)
+		for j := range prof.Devices {
+			macs = append(macs, prof.Devices[j].MAC)
 		}
 
 		fields := map[string]interface{}{
@@ -254,7 +258,7 @@ func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 		}
 
 		pt := influxdb2.NewPoint("eero_profile_mappings", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -274,7 +278,7 @@ func (p *Poller) writeISPSpeeds(net *eero.NetworkDetails) {
 	}
 
 	pt := influxdb2.NewPoint("eero_isp_speed", tags, fields, time.Now())
-	p.influx.WriteAPI.WritePoint(pt)
+	p.influx.WritePoint(pt)
 }
 
 // writeNetworkConfig writes a comprehensive snapshot of the network configuration
@@ -326,5 +330,5 @@ func (p *Poller) writeNetworkConfig(net *eero.NetworkDetails) {
 	}
 
 	pt := influxdb2.NewPoint("eero_network_config", tags, fields, time.Now())
-	p.influx.WriteAPI.WritePoint(pt)
+	p.influx.WritePoint(pt)
 }

@@ -12,11 +12,12 @@ import (
 
 // Config holds all the required environment variables.
 type Config struct {
-	EeroLogin    string
-	InfluxURL    string
-	InfluxToken  string
-	InfluxOrg    string
-	InfluxBucket string
+	EeroLogin       string
+	EeroSessionPath string
+	InfluxURL       string
+	InfluxToken     string
+	InfluxOrg       string
+	InfluxBucket    string
 }
 
 // Load reads config from environment variables and an optional .env file.
@@ -26,11 +27,21 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		EeroLogin:    os.Getenv("EERO_LOGIN"),
-		InfluxURL:    os.Getenv("INFLUX_URL"),
-		InfluxToken:  os.Getenv("INFLUX_TOKEN"),
-		InfluxOrg:    os.Getenv("INFLUX_ORG"),
-		InfluxBucket: os.Getenv("INFLUX_BUCKET"),
+		EeroLogin:       os.Getenv("EERO_LOGIN"),
+		EeroSessionPath: os.Getenv("EERO_SESSION_PATH"),
+		InfluxURL:       os.Getenv("INFLUX_URL"),
+		InfluxToken:     os.Getenv("INFLUX_TOKEN"),
+		InfluxOrg:       os.Getenv("INFLUX_ORG"),
+		InfluxBucket:    os.Getenv("INFLUX_BUCKET"),
+	}
+
+	// Set default session path if not provided.
+	if cfg.EeroSessionPath == "" {
+		if _, err := os.Stat("/app/data"); err == nil {
+			cfg.EeroSessionPath = "/app/data/.eero_session.json"
+		} else {
+			cfg.EeroSessionPath = "data/app/.eero_session.json"
+		}
 	}
 
 	if cfg.EeroLogin == "" {

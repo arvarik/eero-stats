@@ -80,7 +80,8 @@ func main() {
 	// Start the polling daemon in a goroutine so the main goroutine can
 	// block on context cancellation for orderly shutdown.
 	var wg sync.WaitGroup
-	daemon := poller.NewPoller(eeroClient, influxClient, networkURL)
+	eeroAdapter := poller.NewEeroClientAdapter(eeroClient)
+	daemon := poller.NewPoller(eeroAdapter, influxClient.WriteAPI, networkURL)
 
 	wg.Add(1)
 	go func() {
