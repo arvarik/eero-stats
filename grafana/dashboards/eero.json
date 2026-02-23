@@ -734,7 +734,8 @@
                 "value": -60
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.device_name} \u2192 ${__field.labels.node_name} (${__field.labels.connection_type})"
         },
         "overrides": []
       },
@@ -819,7 +820,8 @@
               }
             ]
           },
-          "unit": "bps"
+          "unit": "bps",
+          "displayName": "${__field.labels.device_name}"
         },
         "overrides": []
       },
@@ -854,7 +856,8 @@
         }
       ],
       "title": "Global Throughput Rates ($Frequency)",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "\u26a0\ufe0f These are negotiated Wi-Fi link rates (PHY rates), not real-time traffic throughput.\n\nThe value represents the maximum speed the Wi-Fi association between the device and its AP is capable of at the radio layer \u2014 similar to seeing '866 Mbps' in your OS Wi-Fi details. A device can show a high link rate even when idle (no actual data is being transferred).\n\nTo see actual traffic usage, check your Eero mobile app's Data Usage view."
     },
     {
       "collapsed": false,
