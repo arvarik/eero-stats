@@ -10,6 +10,10 @@ Designed for minimal flash storage wear (ideal for TrueNAS SCALE, Unraid, or Pro
 
 It ships with a fully automated **Grafana dashboard** covering network health, device signal quality, node telemetry, and more.
 
+<p align="center">
+  <img src="docs/images/dashboard-preview.png" alt="Eero Network Telemetry Dashboard" width="100%">
+</p>
+
 ---
 
 ## Architecture
