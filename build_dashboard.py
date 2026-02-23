@@ -376,11 +376,15 @@ Q_PEAK_HOURS = (
     'from(bucket: "eero")\n'
     '  |> range(start: -7d)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_client_timeseries" and r._field == "connected" and r._value == true)\n'
-    '  |> group()\n'
+    '  |> group(columns: ["device_name"])\n'
     '  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n'
-    '  |> map(fn: (r) => ({r with _value: r._value, _field: string(v: date.hour(t: r._time)) + ":00"}))\n'
-    '  |> group(columns: ["_field"])\n'
-    '  |> mean()'
+    '  |> group()\n'
+    '  |> map(fn: (r) => ({_time: r._time, hour: string(v: date.hour(t: r._time)), _value: r._value}))\n'
+    '  |> group(columns: ["hour"])\n'
+    '  |> sum()\n'
+    '  |> group()\n'
+    '  |> map(fn: (r) => ({hour: r.hour + ":00", connected_devices: r._value}))\n'
+    '  |> sort(columns: ["hour"])'
 )
 
 Q_SIGNAL_HEATMAP = (
