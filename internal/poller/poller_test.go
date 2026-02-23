@@ -2,6 +2,7 @@ package poller
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -49,10 +50,13 @@ func (m *MockMetricWriter) WritePoint(point *write.Point) {
 }
 
 func TestPoller_Start(t *testing.T) {
+	var mu sync.Mutex
 	calledNetwork := false
 	mockClient := &MockEeroClient{
 		GetNetworkFunc: func(ctx context.Context, url string) (*eero.NetworkDetails, error) {
+			mu.Lock()
 			calledNetwork = true
+			mu.Unlock()
 			return &eero.NetworkDetails{
 				Name: "Test Network",
 				Health: eero.Health{
@@ -68,7 +72,9 @@ func TestPoller_Start(t *testing.T) {
 	writeCount := 0
 	mockWriter := &MockMetricWriter{
 		WritePointFunc: func(point *write.Point) {
+			mu.Lock()
 			writeCount++
+			mu.Unlock()
 		},
 	}
 
@@ -95,6 +101,8 @@ func TestPoller_Start(t *testing.T) {
 		t.Fatal("Poller did not stop within timeout")
 	}
 
+	mu.Lock()
+	defer mu.Unlock()
 	if !calledNetwork {
 		t.Error("Expected GetNetwork to be called")
 	}
