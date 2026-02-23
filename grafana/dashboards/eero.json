@@ -1,38 +1,31 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": "-- Grafana --",
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": null,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
-      "collapsed": false,
+      "id": 4,
+      "type": "row",
+      "title": "\ud83d\udcca Executive Summary",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 2,
-      "panels": [],
-      "title": "\ud83c\udf10 Network & ISP Overview",
-      "type": "row"
+      "collapsed": false,
+      "panels": []
     },
     {
+      "id": 6,
+      "type": "stat",
+      "title": "ISP Status",
+      "description": "Whether the Eero gateway has a working upstream internet connection.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -40,21 +33,21 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed"
+            "mode": "thresholds"
           },
           "mappings": [
             {
               "type": "value",
               "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "Offline"
-                },
                 "1": {
                   "color": "green",
                   "index": 0,
-                  "text": "Online"
+                  "text": "\u2705 OK"
+                },
+                "0": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "\u274c Down"
                 }
               }
             }
@@ -63,7 +56,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               }
             ]
@@ -72,12 +65,11 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
+        "h": 4,
+        "w": 4,
         "x": 0,
         "y": 1
       },
-      "id": 4,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -100,12 +92,13 @@
           "refId": "A",
           "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"isp_up\")\n  |> last()\n  |> map(fn: (r) => ({r with _value: if r._value == true then 1 else 0}))"
         }
-      ],
-      "title": "ISP Status",
-      "type": "stat",
-      "description": "Whether the Eero gateway has a working upstream internet connection. Sourced from Health.Internet.ISPUp."
+      ]
     },
     {
+      "id": 8,
+      "type": "stat",
+      "title": "Mesh Status",
+      "description": "Overall Eero mesh network health status.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -122,12 +115,12 @@
                 "1": {
                   "color": "green",
                   "index": 0,
-                  "text": "Connected"
+                  "text": "\u2705 OK"
                 },
                 "0": {
                   "color": "red",
                   "index": 1,
-                  "text": "Disconnected"
+                  "text": "\u274c Down"
                 }
               }
             }
@@ -145,14 +138,13 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 6,
+        "h": 4,
+        "w": 4,
+        "x": 4,
         "y": 1
       },
-      "id": 6,
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
@@ -173,12 +165,13 @@
           "refId": "A",
           "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"eero_network_status\")\n  |> last()\n  |> map(fn: (r) => ({r with _value: if r._value == \"connected\" then 1 else 0}))"
         }
-      ],
-      "title": "Eero Mesh Status",
-      "type": "stat",
-      "description": "Overall Eero network status as reported by the Eero API. 'Connected' means the mesh itself is healthy."
+      ]
     },
     {
+      "id": 10,
+      "type": "stat",
+      "title": "Double NAT",
+      "description": "Double NAT detected means your Eero is behind another router. This can cause issues with port forwarding and game hosting.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -188,63 +181,143 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
-          "max": 1000,
-          "min": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "color": "orange",
+                  "index": 0,
+                  "text": "\u26a0\ufe0f Double NAT"
+                },
+                "0": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "\u2705 Clean"
+                }
+              }
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 200
-              },
-              {
                 "color": "green",
-                "value": 500
+                "value": null
               }
             ]
-          },
-          "unit": "megabits"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calc": "lastNotNull",
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\" and r._field == \"double_nat\")\n  |> last()\n  |> map(fn: (r) => ({r with _value: if r._value == true then 1 else 0}))"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Firmware Status",
+      "description": "Whether any Eero node has a firmware update available.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "color": "orange",
+                  "index": 0,
+                  "text": "\u26a0\ufe0f Update Available"
+                },
+                "0": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "\u2705 Up to Date"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
         "x": 12,
         "y": 1
       },
-      "id": 8,
       "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calc": "lastNotNull",
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"eero_isp_speed\" and r._field == \"speed_down_mbps\")\n  |> last()",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\" and r._field == \"firmware_has_update\")\n  |> last()\n  |> map(fn: (r) => ({r with _value: if r._value == true then 1 else 0}))"
         }
-      ],
-      "title": "ISP Download",
-      "type": "gauge",
-      "description": "Last measured ISP download speed in Mbps from Eero's built-in speed test (runs periodically, not real-time)."
+      ]
     },
     {
+      "id": 14,
+      "type": "gauge",
+      "title": "ISP Download Speed",
+      "description": "Last measured ISP download speed from Eero's built-in speed test (not real-time).",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -254,9 +327,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
-          "max": 50,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -265,95 +335,174 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
-                "value": 10
+                "color": "yellow",
+                "value": 400.0
               },
               {
                 "color": "green",
-                "value": 25
+                "value": 700.0
               }
             ]
           },
-          "unit": "megabits"
+          "unit": "Mbps",
+          "min": 0,
+          "max": 1000
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 18,
+        "h": 4,
+        "w": 4,
+        "x": 16,
         "y": 1
       },
-      "id": 10,
       "options": {
-        "orientation": "auto",
         "reduceOptions": {
           "calc": "lastNotNull",
           "fields": "",
           "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        }
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"eero_isp_speed\" and r._field == \"speed_up_mbps\")\n  |> last()",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_isp_speed\" and r._field == \"speed_down_mbps\")\n  |> last()"
         }
-      ],
-      "title": "ISP Upload",
-      "type": "gauge",
-      "description": "Last measured ISP upload speed in Mbps from Eero's built-in speed test (runs periodically, not real-time)."
+      ]
     },
     {
+      "id": 16,
+      "type": "gauge",
+      "title": "ISP Upload Speed",
+      "description": "Last measured ISP upload speed from Eero's built-in speed test (not real-time).",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 200.0
+              },
+              {
+                "color": "green",
+                "value": 350.0
+              }
+            ]
+          },
+          "unit": "Mbps",
+          "min": 0,
+          "max": 500
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "options": {
+        "reduceOptions": {
+          "calc": "lastNotNull",
+          "fields": "",
+          "values": false
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_isp_speed\" and r._field == \"speed_up_mbps\")\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "row",
+      "title": "\ud83c\udf10 ISP & Connectivity",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "table",
+      "title": "Network Configuration",
+      "description": "Live network config snapshot: GeoIP for WAN IP, DNS/DHCP setup, security features, and guest network status.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 6
       },
-      "id": 12,
       "options": {
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"dhcp_mode\", \"dns_mode\", \"geoip_isp\", \"geoip_city\", \"geoip_region_name\", \"geoip_timezone\", \"geoip_org\"])\n  |> last(column: \"_time\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"geoip_city\", \"geoip_isp\", \"geoip_org\", \"geoip_region_name\",\n      \"geoip_timezone\", \"public_ip\", \"dns_mode\", \"dhcp_mode\", \"wan_type\",\n      \"band_steering\", \"wpa3_enabled\", \"upnp_enabled\", \"guest_network_name\",\n      \"double_nat\", \"wireless_mode\", \"mlo_mode\"])\n  |> last(column: \"_time\")"
         }
-      ],
-      "title": "Network Configuration",
-      "type": "table",
-      "description": "Current network configuration snapshot: DHCP/DNS modes, GeoIP details for the WAN IP."
+      ]
     },
     {
-      "collapsed": false,
+      "id": 22,
+      "type": "row",
+      "title": "\ud83d\udce1 Eero Node Telemetry ($Node)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 13
       },
-      "id": 14,
-      "panels": [],
-      "title": "\ud83d\udce1 Eero Node Telemetry ($Node)",
-      "type": "row"
+      "collapsed": false,
+      "panels": []
     },
     {
+      "id": 24,
+      "type": "timeseries",
+      "title": "Connected Clients per Node",
+      "description": "Number of Wi-Fi clients currently associated to each Eero node. Useful for spotting imbalanced load across your mesh.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -364,33 +513,19 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Clients",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 30,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
             "showPoints": "auto",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
+            "axisLabel": "",
             "thresholdsStyle": {
               "mode": "off"
             }
           },
+          "displayName": "${__field.labels.node_name}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -401,7 +536,7 @@
               }
             ]
           },
-          "displayName": "${__field.labels.node_name}"
+          "unit": ""
         },
         "overrides": []
       },
@@ -409,9 +544,8 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 14
       },
-      "id": 16,
       "options": {
         "legend": {
           "calcs": [],
@@ -427,19 +561,20 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"connected_clients_count\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"connected_clients_count\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> group(columns: [\"node_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")"
         }
-      ],
-      "title": "Connected Clients Load Balancer",
-      "type": "timeseries",
-      "description": "Number of Wi-Fi clients currently associated to each Eero node. Useful for spotting imbalanced load across your mesh."
+      ]
     },
     {
+      "id": 26,
+      "type": "state-timeline",
+      "title": "Node Uptime",
+      "description": "Per-node online/offline status over time. 'green' from the eero API means fully operational.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -447,7 +582,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
           "custom": {
             "fillOpacity": 70,
@@ -488,8 +623,7 @@
                 "value": 1
               }
             ]
-          },
-          "displayName": "${__field.labels.node_name}"
+          }
         },
         "overrides": []
       },
@@ -497,9 +631,8 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 14
       },
-      "id": 18,
       "options": {
         "alignValue": "center",
         "legend": {
@@ -507,8 +640,8 @@
           "placement": "bottom",
           "showLegend": true
         },
-        "mergeValues": true,
-        "rowHeight": 0.9,
+        "mergeValues": false,
+        "rowHeight": 0.6,
         "showValue": "auto",
         "tooltip": {
           "mode": "single",
@@ -518,19 +651,20 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"status\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"status\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")"
         }
-      ],
-      "title": "Node Uptime",
-      "type": "state-timeline",
-      "description": "Per-node online/offline status over time. 'green' from the API means the node is fully operational."
+      ]
     },
     {
+      "id": 28,
+      "type": "bargauge",
+      "title": "Mesh Backhaul Quality",
+      "description": "Quality of wireless backhaul link between each node and the gateway (1\u20135 bars). 5=excellent, 1=critical. N/A for wired backhaul nodes.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -540,9 +674,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
-          "max": 5,
-          "min": 1,
+          "displayName": "${__field.labels.node_name}",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -551,7 +683,7 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "yellow",
                 "value": 3
               },
               {
@@ -560,7 +692,8 @@
               }
             ]
           },
-          "displayName": "${__field.labels.node_name}"
+          "min": 0,
+          "max": 5
         },
         "overrides": []
       },
@@ -568,11 +701,10 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 23
+        "y": 22
       },
-      "id": 20,
       "options": {
-        "displayMode": "gradient",
+        "displayMode": "lcd",
         "orientation": "horizontal",
         "reduceOptions": {
           "calc": "lastNotNull",
@@ -584,205 +716,103 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"mesh_quality_bars\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> last()",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -15m)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"mesh_quality_bars\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> last()"
         }
-      ],
-      "title": "Mesh Backhaul Quality",
-      "type": "bargauge",
-      "description": "Quality of the wireless backhaul link between each node and the gateway (1\u20135 bars). 5 = excellent, 1 = critical. Does not apply to wired backhaul nodes."
+      ]
     },
     {
+      "id": 30,
+      "type": "table",
+      "title": "Eero Hardware Details",
+      "description": "Static inventory: serial, model, IP, firmware version, and whether each node is the primary gateway.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 23
+        "y": 22
       },
-      "id": 22,
       "options": {
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -2h)\n  |> filter(fn: (r) => r._measurement == \"eero_node_metadata\")\n  |> pivot(rowKey:[\"serial\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"node_name\", \"serial\", \"ip_address\", \"os_version\", \"wired\", \"is_primary_node\", \"ethernet_addresses\"])\n  |> group()",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -2h)\n  |> filter(fn: (r) => r._measurement == \"eero_node_metadata\")\n  |> pivot(rowKey:[\"serial\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"node_name\", \"serial\", \"model_number\", \"ip_address\", \"os_version\",\n      \"wired\", \"is_primary_node\", \"update_available\", \"ethernet_addresses\", \"joined\"])\n  |> group()"
         }
-      ],
-      "title": "Eero Hardware Details",
-      "type": "table",
-      "description": "Static inventory: serial, IP, firmware version, MAC addresses, and whether each node is the primary gateway."
+      ]
     },
     {
-      "collapsed": false,
+      "id": 32,
+      "type": "table",
+      "title": "Firmware Status",
+      "description": "Current firmware on each node. 'update_available = true' rows indicate a pending update.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -2h)\n  |> filter(fn: (r) => r._measurement == \"eero_node_metadata\")\n  |> pivot(rowKey:[\"serial\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"node_name\", \"os_version\", \"update_available\"])\n  |> group()"
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "type": "row",
+      "title": "\ud83d\udd2c Node Deep-Dive ($Node)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 33
       },
-      "id": 24,
-      "panels": [],
-      "title": "\ud83d\udcf1 Client Device Health ($Frequency)",
-      "type": "row"
+      "collapsed": false,
+      "panels": []
     },
     {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "P951FEA4DE68E13C5"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 30
-      },
-      "id": 26,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "pieType": "donut",
-        "reduceOptions": {
-          "calc": "lastNotNull",
-          "fields": "",
-          "values": false
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"frequency\", \"frequency_unit\"])\n  |> count()\n  |> map(fn: (r) => ({\n       r with frequency:\n         if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\"\n         else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))",
-          "refId": "A",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "P951FEA4DE68E13C5"
-          }
-        }
-      ],
-      "title": "Band Distribution",
-      "type": "piechart",
-      "fieldConfig": {
-        "defaults": {
-          "displayName": "${__field.labels.frequency}"
-        }
-      },
-      "description": "Breakdown of currently connected clients by Wi-Fi band. Wired = ethernet-connected clients."
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "P951FEA4DE68E13C5"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "axisLabel": "dBm",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "points",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": -75
-              },
-              {
-                "color": "green",
-                "value": -60
-              }
-            ]
-          },
-          "displayName": "${__field.labels.device_name} \u2192 ${__field.labels.node_name} (${__field.labels.connection_type})"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 16,
-        "x": 8,
-        "y": 30
-      },
-      "id": 28,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "hidden",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"signal\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
-          "refId": "A",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "P951FEA4DE68E13C5"
-          }
-        }
-      ],
-      "title": "Network-Wide Signal Strength (Heatmap Proxy)",
+      "id": 36,
       "type": "timeseries",
-      "description": "RSSI (signal strength in dBm) for every wireless client over time. Green = strong (> -60 dBm), yellow = fair (> -75 dBm), red = weak."
-    },
-    {
+      "title": "Clients on Node (History)",
+      "description": "Historical client count for the selected node over the chosen time range.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -793,33 +823,19 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Data Rate",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
             "showPoints": "auto",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
+            "axisLabel": "",
             "thresholdsStyle": {
               "mode": "off"
             }
           },
+          "displayName": "${__field.labels.node_name}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -830,18 +846,16 @@
               }
             ]
           },
-          "unit": "bps",
-          "displayName": "${__field.labels.device_name}"
+          "unit": ""
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
+        "w": 12,
         "x": 0,
-        "y": 38
+        "y": 34
       },
-      "id": 30,
       "options": {
         "legend": {
           "calcs": [],
@@ -857,32 +871,561 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and (r._field == \"rx_rate_bps\" or r._field == \"tx_rate_bps\"))\n  |> filter(fn: (r) => r.frequency =~ /^${Frequency:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"connected_clients_count\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> group(columns: [\"node_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
         }
-      ],
-      "title": "Global Throughput Rates ($Frequency)",
-      "type": "timeseries",
-      "description": "\u26a0\ufe0f These are negotiated Wi-Fi link rates (PHY rates), not real-time traffic throughput.\n\nThe value represents the maximum speed the Wi-Fi association between the device and its AP is capable of at the radio layer \u2014 similar to seeing '866 Mbps' in your OS Wi-Fi details. A device can show a high link rate even when idle (no actual data is being transferred).\n\nTo see actual traffic usage, check your Eero mobile app's Data Usage view."
+      ]
     },
     {
-      "collapsed": false,
+      "id": 38,
+      "type": "timeseries",
+      "title": "Mesh Quality History",
+      "description": "Mesh backhaul quality bars (1\u20135) over time for the selected node. Drops may indicate interference or physical obstructions.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisLabel": "",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.node_name}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": ""
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 34
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"mesh_quality_bars\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> group(columns: [\"node_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "type": "table",
+      "title": "Currently Connected Devices",
+      "description": "Devices currently associated to the selected node, with their MAC address and Wi-Fi band.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 0,
+        "y": 42
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> map(fn: (r) => ({_time: r._time, device: r.device_name, mac: r.mac,\n      connected_to: r.node_name,\n      band: if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\" else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))\n  |> group()"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "type": "state-timeline",
+      "title": "Node Power & Backhaul",
+      "description": "Power source (USB, PoE) and backhaul connection type (wired/wireless) for the selected node over time.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 14,
+        "y": 42
+      },
+      "options": {
+        "alignValue": "center",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "mergeValues": false,
+        "rowHeight": 0.6,
+        "showValue": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and\n      (r._field == \"power_source\" or r._field == \"connection_type\"))\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> last()"
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "type": "row",
+      "title": "\ud83d\udcf1 Client Device Health ($Frequency)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 50
       },
-      "id": 32,
-      "panels": [],
-      "title": "\ud83d\udd75\ufe0f Specific Device Deep-Dive ($Device)",
-      "type": "row"
+      "collapsed": false,
+      "panels": []
     },
     {
+      "id": 46,
+      "type": "piechart",
+      "title": "Band Distribution",
+      "description": "Breakdown of currently connected clients by Wi-Fi band. Wired = ethernet-connected clients.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.frequency}",
+          "custom": {},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 51
+      },
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"frequency\", \"frequency_unit\"])\n  |> count()\n  |> map(fn: (r) => ({\n       r with frequency:\n         if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\"\n         else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))"
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "type": "timeseries",
+      "title": "Band Steering Efficiency",
+      "description": "Number of connected devices on each frequency band over time. Shows how well devices are distributed across 2.4/5/6 GHz.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisLabel": "",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.frequency}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": ""
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 6,
+        "y": 51
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "import \"date\"\nfrom(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> filter(fn: (r) => r.frequency != \"\")\n  |> group(columns: [\"frequency\", \"frequency_unit\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: false)\n  |> map(fn: (r) => ({\n       r with frequency:\n         if r.frequency == \"wired\" then \"Wired\"\n         else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))"
+        }
+      ]
+    },
+    {
+      "id": 50,
+      "type": "barchart",
+      "title": "Peak Hours (7-day avg)",
+      "description": "Average number of devices connected per hour of day over the last 7 days. Useful for spotting peak network usage patterns.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 80,
+            "gradientMode": "none"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 51
+      },
+      "options": {
+        "barWidth": 0.97,
+        "groupWidth": 0.7,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 100
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "import \"date\"\nfrom(bucket: \"eero\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"_time\"])\n  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n  |> map(fn: (r) => ({r with hour: string(v: date.hour(t: r._time))}))\n  |> group(columns: [\"hour\"])\n  |> mean(column: \"_value\")"
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "type": "timeseries",
+      "title": "Network-Wide Signal Strength",
+      "description": "RSSI (dBm) for every wireless client. Closer to 0 is better; below -75 dBm is poor.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisLabel": "dBm",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.device_name} \u2192 ${__field.labels.node_name} (${__field.labels.connection_type})",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "dBm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 59
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"signal\")\n  |> filter(fn: (r) => r.connection_type == \"wireless\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+    {
+      "id": 54,
+      "type": "timeseries",
+      "title": "Global Throughput Rates ($Frequency)",
+      "description": "\u26a0\ufe0f Negotiated Wi-Fi link (PHY) rates \u2014 NOT real-time throughput. Shows the max speed the radio association is capable of. A device shows a high rate even when idle.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisLabel": "bps",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.device_name}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 67
+      },
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and\n      (r._field == \"rx_rate_bps\" or r._field == \"tx_rate_bps\"))\n  |> filter(fn: (r) => r.frequency =~ /^${Frequency:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")"
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "type": "row",
+      "title": "\ud83d\udd75\ufe0f Specific Device Deep-Dive ($Device)",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 75
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 58,
+      "type": "state-timeline",
+      "title": "AP Roaming Events",
+      "description": "Which Eero node the selected device is associated with over time. Changes indicate a roaming event.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -913,9 +1456,8 @@
         "h": 20,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 76
       },
-      "id": 36,
       "options": {
         "alignValue": "center",
         "legend": {
@@ -934,19 +1476,20 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"signal\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> keep(columns: [\"_time\", \"_value\", \"device_name\", \"node_name\"])\n  |> map(fn: (r) => ({_time: r._time, _value: r.node_name, device_name: r.device_name}))",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"signal\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> keep(columns: [\"_time\", \"_value\", \"device_name\", \"node_name\"])\n  |> map(fn: (r) => ({_time: r._time, _value: r.node_name, device_name: r.device_name}))"
         }
-      ],
-      "title": "AP Roaming Events",
-      "type": "state-timeline",
-      "description": "Which Eero node the device is associated with over time. Changes indicate a roaming event."
+      ]
     },
     {
+      "id": 60,
+      "type": "timeseries",
+      "title": "Device Signal Strength",
+      "description": "RSSI (dBm) for the selected device over time. Closer to 0 is better; below -75 dBm is poor.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -957,52 +1500,30 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "dBm",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
             "lineInterpolation": "smooth",
             "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
             "showPoints": "auto",
             "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
+            "axisLabel": "dBm",
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "off"
             }
           },
+          "displayName": "${__field.labels.device_name}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": -75
-              },
-              {
                 "color": "green",
-                "value": -60
+                "value": null
               }
             ]
           },
-          "displayName": "${__field.labels.device_name}"
+          "unit": "dBm"
         },
         "overrides": []
       },
@@ -1010,9 +1531,8 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 67
+        "y": 96
       },
-      "id": 38,
       "options": {
         "legend": {
           "calcs": [],
@@ -1021,37 +1541,41 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"signal\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"signal\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")"
         }
-      ],
-      "title": "Device Signal Strength",
-      "type": "timeseries",
-      "description": "RSSI (dBm) for the selected device over time. Closer to 0 is better; below -75 dBm is poor."
+      ]
     },
     {
+      "id": 62,
+      "type": "table",
+      "title": "Device Metadata",
+      "description": "Current connection snapshot for the selected device: connected node, MAC, frequency band, and connection type.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 79
+        "y": 108
       },
-      "id": 42,
       "options": {
         "showHeader": true,
         "sortBy": []
@@ -1064,16 +1588,127 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> map(fn: (r) => ({\n       _time: r._time,\n       device: r.device_name,\n       mac: r.mac,\n       connected_to: r.node_name,\n       connection: r.connection_type,\n       band: if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\" else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))\n  |> group()"
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> map(fn: (r) => ({\n       _time: r._time,\n       device: r.device_name,\n       mac: r.mac,\n       connected_to: r.node_name,\n       connection: r.connection_type,\n       band: if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\"\n             else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))\n  |> group()"
         }
-      ],
-      "title": "Device Metadata",
+      ]
+    },
+    {
+      "id": 64,
+      "type": "row",
+      "title": "\u26a0\ufe0f Alerts & Anomalies",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 116
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 66,
       "type": "table",
-      "description": "Current connection snapshot: connected node, MAC, frequency band, and connection type.",
+      "title": "Offline / Stale Devices (>24h)",
+      "description": "Devices that were last seen connected more than 24 hours ago. Useful for tracking unplugged or forgotten devices.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 0,
+        "y": 117
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\")\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> filter(fn: (r) => r._value == false)\n  |> map(fn: (r) => ({_time: r._time, device: r.device_name, mac: r.mac,\n      last_seen: string(v: r._time), connected_to: r.node_name}))\n  |> group()"
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "type": "table",
+      "title": "Paused Devices",
+      "description": "Devices currently paused by an Eero profile (parental controls or manual pause).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 10,
+        "y": 117
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"paused\")\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> filter(fn: (r) => r._value == true)\n  |> map(fn: (r) => ({_time: r._time, device: r.device_name, mac: r.mac}))\n  |> group()"
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "type": "table",
+      "title": "Blocked Devices",
+      "description": "Devices that have been blocked/blacklisted from the network.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 7,
+        "x": 17,
+        "y": 117
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"blacklisted\")\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> filter(fn: (r) => r._value == true)\n  |> map(fn: (r) => ({_time: r._time, device: r.device_name, mac: r.mac}))\n  |> group()"
+        }
+      ]
     }
   ],
   "refresh": "1m",

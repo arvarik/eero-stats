@@ -218,8 +218,13 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 		}
 
 		fields := map[string]interface{}{
-			"connected":  d.Connected,
-			"score_bars": d.Connectivity.ScoreBars,
+			"connected":   d.Connected,
+			"score_bars":  d.Connectivity.ScoreBars,
+			"score":       d.Connectivity.Score,
+			"paused":      d.Paused,
+			"is_guest":    d.IsGuest,
+			"blacklisted": d.Blacklisted,
+			"channel":     d.Channel,
 		}
 
 		if strings.HasSuffix(d.Connectivity.Signal, " dBm") {
@@ -227,6 +232,15 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 			val, err := strconv.Atoi(s)
 			if err == nil {
 				fields["signal"] = val
+			}
+		}
+		if d.Connectivity.SignalAvg != nil {
+			if strings.HasSuffix(*d.Connectivity.SignalAvg, " dBm") {
+				s := strings.TrimSuffix(*d.Connectivity.SignalAvg, " dBm")
+				val, err := strconv.Atoi(s)
+				if err == nil {
+					fields["signal_avg"] = val
+				}
 			}
 		}
 
@@ -264,8 +278,11 @@ func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 			"mesh_quality_bars":       node.MeshQualityBars,
 			"heartbeat_ok":            node.HeartbeatOK,
 			"status":                  node.Status,
+			"state":                   node.State,
 			"using_wan":               node.UsingWan,
 			"power_source":            node.PowerInfo.PowerSource,
+			"connection_type":         node.ConnectionType,
+			"led_on":                  node.LedOn,
 		}
 
 		pt := influxdb2.NewPoint("eero_node_timeseries", tags, fields, now)
@@ -301,10 +318,14 @@ func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 			"ip_address":         node.IPAddress,
 			"mac_address":        node.MACAddress,
 			"os_version":         node.OSVersion,
+			"model_number":       node.ModelNumber,
 			"update_available":   node.UpdateAvailable,
 			"wired":              node.Wired,
 			"gateway":            node.Gateway,
 			"is_primary_node":    node.IsPrimaryNode,
+			"led_on":             node.LedOn,
+			"last_heartbeat":     node.LastHeartbeat.UnixMilli(),
+			"joined":             node.Joined.Time.Format(time.RFC3339),
 			"ethernet_addresses": strings.Join(node.EthernetAddresses, ","),
 			"wifi_bssids":        strings.Join(node.WifiBSSIDs, ","),
 			"bands":              strings.Join(node.Bands, ","),
@@ -334,6 +355,14 @@ func (p *Poller) writeClientMetadata(devices []eero.Device) {
 			"device_type":     d.DeviceType,
 			"ipv4":            d.IPv4,
 			"is_proxied_node": d.IsProxiedNode,
+			"is_private_mac":  d.IsPrivate,
+			"is_guest":        d.IsGuest,
+			"blacklisted":     d.Blacklisted,
+			"paused":          d.Paused,
+			"auth":            d.Auth,
+			"ssid":            d.SSID,
+			"subnet_kind":     d.SubnetKind,
+			"vlan_name":       d.VlanName,
 			"first_active":    d.FirstActive.Time.Format(time.RFC3339),
 			"last_active":     d.LastActive.Time.Format(time.RFC3339),
 		}
@@ -398,27 +427,46 @@ func (p *Poller) writeNetworkConfig(net *eero.NetworkDetails) {
 	tags := map[string]string{
 		"network_name": net.Name,
 	}
+	dhcpRouter := ""
+	if net.Lease.DHCP != nil {
+		dhcpRouter = net.Lease.DHCP.Router
+	}
+
 	fields := map[string]interface{}{
-		"premium_status":       net.PremiumStatus,
-		"premium_tier":         net.PremiumDetails.Tier,
-		"dns_policies_enabled": net.PremiumDNS.DNSPoliciesEnabled,
-		"ad_block_enabled":     net.PremiumDNS.AdBlockSettings.Enabled,
-		"dhcp_mode":            net.DHCP.Mode,
-		"dhcp_router":          net.Lease.DHCP.Router,
-		"dns_mode":             net.DNS.Mode,
-		"dns_caching":          net.DNS.Caching,
-		"dns_parent_ips":       strings.Join(net.DNS.Parent.IPs, ","),
-		"geoip_country":        net.GeoIP.CountryName,
-		"geoip_region":         net.GeoIP.Region,
-		"geoip_region_name":    net.GeoIP.RegionName,
-		"geoip_city":           net.GeoIP.City,
-		"geoip_timezone":       net.GeoIP.Timezone,
-		"geoip_isp":            net.GeoIP.ISP,
-		"geoip_org":            net.GeoIP.Org,
-		"geoip_asn":            net.GeoIP.ASN,
-		"wan_type":             net.WanType,
-		"wireless_mode":        net.WirelessMode,
-		"mlo_mode":             net.MloMode,
+		"premium_status":        net.PremiumStatus,
+		"premium_tier":          net.PremiumDetails.Tier,
+		"dns_policies_enabled":  net.PremiumDNS.DNSPoliciesEnabled,
+		"ad_block_enabled":      net.PremiumDNS.AdBlockSettings.Enabled,
+		"block_malware_enabled": net.PremiumDNS.DNSPolicies.BlockMalware,
+		"dhcp_mode":             net.DHCP.Mode,
+		"dhcp_router":           dhcpRouter,
+		"dns_mode":              net.DNS.Mode,
+		"dns_caching":           net.DNS.Caching,
+		"dns_parent_ips":        strings.Join(net.DNS.Parent.IPs, ","),
+		"geoip_country":         net.GeoIP.CountryName,
+		"geoip_region":          net.GeoIP.Region,
+		"geoip_region_name":     net.GeoIP.RegionName,
+		"geoip_city":            net.GeoIP.City,
+		"geoip_timezone":        net.GeoIP.Timezone,
+		"geoip_isp":             net.GeoIP.ISP,
+		"geoip_org":             net.GeoIP.Org,
+		"geoip_asn":             net.GeoIP.ASN,
+		"wan_type":              net.WanType,
+		"wireless_mode":         net.WirelessMode,
+		"mlo_mode":              net.MloMode,
+		"band_steering":         net.BandSteering,
+		"wpa3_enabled":          net.Wpa3,
+		"upnp_enabled":          net.UpnpEnabled,
+		"ipv6_upstream":         net.IPv6Upstream,
+		"thread_enabled":        net.ThreadEnabled,
+		"sqm_enabled":           net.SQMEnabled,
+		"double_nat":            net.IPSettings.DoubleNAT,
+		"public_ip":             net.IPSettings.PublicIP,
+		"guest_network_enabled": net.GuestNetwork.Enabled,
+		"guest_network_name":    net.GuestNetwork.Name,
+		"firmware_has_update":   net.Updates.HasUpdate,
+		"firmware_target":       net.Updates.TargetFirmware,
+		"firmware_update_req":   net.Updates.UpdateRequired,
 	}
 
 	pt := influxdb2.NewPoint("eero_network_config", tags, fields, time.Now())
