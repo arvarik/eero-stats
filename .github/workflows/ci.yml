@@ -22,12 +22,16 @@ jobs:
 
       - name: Tidy dependencies
         run: go mod tidy
-        working-directory: .
+
+      - name: Build
+        run: go build ./cmd/... ./internal/...
+
+      - name: Vet
+        run: go vet ./cmd/... ./internal/...
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         continue-on-error: true
         with:
           version: latest
-          working-directory: .
           args: --timeout=5m

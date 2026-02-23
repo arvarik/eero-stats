@@ -1,4 +1,4 @@
-.PHONY: all tidy lint build docker-up docker-down clean
+.PHONY: all tidy lint build dashboard docker-up docker-down setup clean
 
 # The primary binary output location
 BIN_DIR := bin
@@ -13,13 +13,16 @@ tidy:
 
 lint:
 	@echo "=> Running golangci-lint..."
-	# Assuming golangci-lint is installed locally or in PATH
 	golangci-lint run ./...
 
 build:
 	@echo "=> Building eero-stats binary..."
 	mkdir -p $(BIN_DIR)
 	go build -o $(BIN_DIR)/$(BINARY_NAME) ./cmd/eero-stats
+
+dashboard:
+	@echo "=> Regenerating Grafana dashboard JSON..."
+	python3 scripts/build_dashboard.py
 
 docker-up:
 	@echo "=> Starting Docker Compose environment..."

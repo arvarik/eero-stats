@@ -1509,7 +1509,7 @@
         },
         "mergeValues": false,
         "rowHeight": 0.6,
-        "showValue": "auto",
+        "showValue": "never",
         "tooltip": {
           "mode": "single",
           "sort": "none"

@@ -11,11 +11,8 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
+# Copy source code and build the binary
 COPY . .
-
-# Download dependencies and build
-RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app-binary ./cmd/eero-stats
 
 # -- Stage 2: Runtime --

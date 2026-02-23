@@ -660,8 +660,10 @@ y += 16
 panels.append(row("🕵️ Specific Device Deep-Dive ($Device)", y, next_id()))
 y += 1
 
-panels.append(state_timeline("AP Roaming Events", Q_DEV_ROAMING, next_id(), 0, y, w=24, h=20,
-    desc="Which Eero node the selected device is associated with over time. Changes indicate a roaming event."))
+p_roaming = state_timeline("AP Roaming Events", Q_DEV_ROAMING, next_id(), 0, y, w=24, h=20,
+    desc="Which Eero node the selected device is associated with over time. Changes indicate a roaming event.")
+p_roaming["options"]["showValue"] = "never"
+panels.append(p_roaming)
 y += 20
 
 panels.append(timeseries("Device Signal Strength", Q_DEV_SIGNAL, next_id(), 0, y, w=24, h=12,

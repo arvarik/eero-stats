@@ -1,3 +1,6 @@
+// Package db provides a thin wrapper around the InfluxDB v2 client, configured
+// with aggressive write batching to minimize SSD write amplification on NVMe
+// storage (ideal for TrueNAS SCALE, Unraid, or Proxmox deployments).
 package db
 
 import (
@@ -10,26 +13,27 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/api"
 )
 
+// InfluxClient wraps the InfluxDB client and its non-blocking write API.
 type InfluxClient struct {
 	Client   influxdb2.Client
 	WriteAPI api.WriteAPI
 }
 
-// NewInfluxClient initializes an NVMe-optimized InfluxDB client.
+// NewInfluxClient creates an InfluxDB client with NVMe-optimized batching.
+// Points are buffered in memory and flushed asynchronously:
+//   - BatchSize:     100 points per flush
+//   - FlushInterval: 60 seconds
 func NewInfluxClient(cfg *config.Config) *InfluxClient {
-	// Enforce heavy batching to protect SSD TBW (Write Amplification)
-	// BatchSize: 100 points
-	// FlushInterval: 60000ms (60 seconds)
 	options := influxdb2.DefaultOptions().
 		SetBatchSize(100).
 		SetFlushInterval(60000)
 
 	client := influxdb2.NewClientWithOptions(cfg.InfluxURL, cfg.InfluxToken, options)
 
-	// Instantiate non-blocking, asynchronous Write API
+	// Use the non-blocking, asynchronous Write API.
 	writeAPI := client.WriteAPI(cfg.InfluxOrg, cfg.InfluxBucket)
 
-	// Attach background error logging for the async writer
+	// Log async write errors in the background.
 	errorsCh := writeAPI.Errors()
 	go func() {
 		for err := range errorsCh {
@@ -43,7 +47,8 @@ func NewInfluxClient(cfg *config.Config) *InfluxClient {
 	}
 }
 
-// Shutdown gracefully flushes all memory buffers to disk on exit
+// Shutdown flushes all buffered writes to disk and closes the InfluxDB
+// connection. The provided context can be used for timeout control.
 func (i *InfluxClient) Shutdown(ctx context.Context) {
 	slog.Info("Flushing InfluxDB memory buffers to disk...")
 	i.WriteAPI.Flush()

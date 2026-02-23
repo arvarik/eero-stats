@@ -4,30 +4,67 @@
 [![CI](https://github.com/arvarik/eero-stats/actions/workflows/ci.yml/badge.svg)](https://github.com/arvarik/eero-stats/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-`eero-stats` is a lightweight, strictly-typed local daemon designed to extract real-time metrics from your Eero Mesh Network and push them natively to an InfluxDB `v2` time-series database.
+`eero-stats` is a lightweight daemon that extracts real-time metrics from your **Eero Mesh Network** and writes them to an **InfluxDB v2** time-series database.
 
-Designed from the ground up for minimal flash storage wear (ideal for TrueNAS SCALE, Unraid, or Proxmox NVMe setups), the daemon utilizes heavy write batching inside the `eero-go` client to pool metrics before async syncing to the SSD.
+Designed for minimal flash storage wear (ideal for TrueNAS SCALE, Unraid, or Proxmox NVMe setups), the daemon uses aggressive write batching to pool metrics in memory before async-flushing to disk.
 
-It comes bundled with a fully automated Grafana dashboard showing your home network speeds, device signal qualities, and online node mappings.
+It ships with a fully automated **Grafana dashboard** covering network health, device signal quality, node telemetry, and more.
 
 ---
 
-## Architecture Flow
+## Architecture
 
-The data aggregation lifecycle automatically mitigates IP bans via tiered, interval-based API polling:
+The daemon uses **tiered interval-based polling** to balance data freshness against Eero API rate limits:
+
+| Tier | Interval | Data Collected |
+| :--- | :---: | :--- |
+| **Fast** | 3 min | Device connectivity, node health, network status |
+| **Medium** | 90 min | Node/device metadata, profile mappings |
+| **Slow** | 12 hr | ISP speed tests, network configuration snapshots |
 
 ```mermaid
 flowchart TD
-    UserCLI([CLI / Initial 2FA]) -->|Interactive OTP| SessionFile{eero_session cache}
-    SessionFile -->|Loads Token| GoPoller[Go eero-stats Daemon]
-    
-    subgraph Engine ["Core Poller Go 1.22"]
-        GoPoller -->|Fast Loop 3m| CorePoll[Poll Devices and Node Connectivity]
-        GoPoller -->|Slow Loop 12h| ISPPoll[Poll ISP Max Speeds]
+    UserCLI([CLI / Initial 2FA]) -->|Interactive OTP| SessionFile{Session Cache}
+    SessionFile -->|Loads Token| GoPoller[eero-stats Daemon]
+
+    subgraph Poller ["Tiered Poller (Go 1.22)"]
+        GoPoller -->|Fast · 3 min| FastPoll[Devices + Nodes + Health]
+        GoPoller -->|Medium · 90 min| MediumPoll[Metadata + Profiles]
+        GoPoller -->|Slow · 12 hr| SlowPoll[ISP Speeds + Config]
     end
-    
-    Engine -->|NVMe Async Batch| Influx[(InfluxDB v2)]
-    Influx -->|FluxQL| Dashboard[[Grafana Turnkey Dashboard]]
+
+    Poller -->|Async Batch Write| Influx[(InfluxDB v2)]
+    Influx -->|Flux Queries| Dashboard[[Grafana Dashboard]]
+```
+
+---
+
+## Project Structure
+
+```
+eero-stats/
+├── cmd/eero-stats/          # Application entry point
+│   └── main.go              #   Daemon bootstrap and graceful shutdown
+├── internal/
+│   ├── auth/                # Eero API authentication (session cache + 2FA)
+│   │   └── auth.go
+│   ├── config/              # Environment variable loading and validation
+│   │   └── config.go
+│   ├── db/                  # InfluxDB client wrapper (NVMe-optimized batching)
+│   │   └── influx.go
+│   └── poller/              # Tiered polling engine
+│       ├── poller.go        #   Poll loop orchestration
+│       ├── writers.go       #   InfluxDB data point writers
+│       └── retry.go         #   Exponential backoff retry helper
+├── grafana/
+│   ├── dashboards/          # Provisioned Grafana dashboard JSON
+│   └── provisioning/        # Datasource and dashboard provider configs
+├── scripts/
+│   └── build_dashboard.py   # Regenerates the Grafana dashboard JSON
+├── docker-compose.yml       # Full stack: daemon + InfluxDB + Grafana
+├── Dockerfile               # Multi-stage build (builder + alpine runtime)
+├── Makefile                 # Build, lint, Docker, and dashboard targets
+└── .env.example             # Template for required environment variables
 ```
 
 ---
@@ -35,72 +72,95 @@ flowchart TD
 ## 🚀 Quick Start (Docker Compose)
 
 ### 1. Clone & Configure
-First, clone the daemon repository:
 
 ```bash
 git clone https://github.com/arvarik/eero-stats.git
 cd eero-stats
 cp .env.example .env
 ```
-*Note: Edit the `.env` file to include your actual Eero login email or phone.*
 
-### 2. Standup the Infrastructure
-Launch the multi-container stack which includes the daemon, InfluxDB, and Grafana:
+Edit `.env` to include your Eero login email or phone number.
+
+### 2. Start the Stack
 
 ```bash
 make docker-up
 ```
 
+This launches the daemon, InfluxDB, and Grafana containers.
+
 > [!NOTE]
-> **Linux Users:** If you encounter a `permission denied` error when connecting to the Docker daemon socket, you need to add your user to the `docker` group. This is not required on macOS, where Docker Desktop handles permissions automatically.
+> **Linux Users:** If you encounter a `permission denied` error with Docker, add your user to the `docker` group:
 > ```bash
 > sudo usermod -aG docker $USER
 > ```
-> You must **log out and back in** (or reboot) for the group change to take effect.
+> Log out and back in for the change to take effect.
 
-### 3. Interactive Authentication (First Boot Only)
-Since this daemon runs locally against Eero's Cloud API, the first time you boot `eero-stats`, you must supply a 2-step verification code from your email/phone. The Docker container stays open to `stdin`:
+### 3. Authenticate (First Boot Only)
+
+The first time the daemon starts, it requires a one-time 2FA verification:
 
 ```bash
-# Attach to the running daemon container to provide inputs
 docker attach eero-stats
 ```
 
-You will see: `Enter verification code:`. Provide the OTP you received from Eero. 
-Upon success, `eero-stats` writes your authorization token to `/data/app/.eero_session.json`.
+Enter the verification code sent to your email/phone. On success, the session token is cached to `/data/app/.eero_session.json`.
 
-**Detaching:** Press `CTRL-P` followed by `CTRL-Q` to safely detach your terminal and let the daemon continue polling in the background!
+**Detach** with `CTRL-P` then `CTRL-Q` to let the daemon continue in the background.
 
 > [!NOTE]
-> **Session Lifecycle:** The Eero API issues a long-lived user token during 2FA that securely proxies all polling activity and bypasses repeated login requests. This cookie (`.eero_session.json`) typically remains valid for **30 days**. If the daemon starts logging `401 Unauthorized` errors, it means your session has expired. To renew it, simply stop the container (`make docker-down`), delete the `.eero_session.json` file inside `./data/app/`, and re-run steps 2 and 3 above to catch a fresh 2FA challenge!
+> **Session Lifecycle:** The Eero API issues a long-lived token (typically valid ~30 days). If the daemon starts logging `401 Unauthorized` errors, stop the container (`make docker-down`), delete `./data/app/.eero_session.json`, and re-run steps 2–3 to re-authenticate.
 
-### 4. View Grafana
-Open Grafana running locally at `http://<your-ip>:3000`. You can login using the defaults (`admin/admin`). The "Eero Overview" dashboard is automatically provisioned—no setup required.
+### 4. View the Dashboard
+
+Open Grafana at `http://<your-ip>:3000` (login: `admin` / `admin`). The **Eero Network Telemetry** dashboard is automatically provisioned.
 
 ---
 
-## Configuration Reference
+## Configuration
 
-All settings are securely injected via `.env`.
+All settings are injected via `.env`:
 
-| Variable | Requirement | Description |
+| Variable | Required | Description |
 | :--- | :---: | :--- |
-| `EERO_LOGIN` | **Required** | The email or phone associated with your Eero Owner Account. |
-| `INFLUX_URL` | Optional | Internal URL to InfluxDB container (`http://influxdb:8086`). |
-| `INFLUX_TOKEN` | Optional | API Token (defaults to `my-super-secret-auth-token-123`). |
-| `INFLUX_ORG` | Optional | InfluxDB Organization (defaults to `eero-stats-org`). |
-| `INFLUX_BUCKET` | Optional | InfluxDB Bucket (defaults to `eero`). |
+| `EERO_LOGIN` | **Yes** | Email or phone for your Eero Owner Account |
+| `INFLUX_URL` | No | InfluxDB URL (default: `http://influxdb:8086`) |
+| `INFLUX_TOKEN` | No | InfluxDB API token (default: `my-super-secret-auth-token-123`) |
+| `INFLUX_ORG` | No | InfluxDB organization (default: `eero-stats-org`) |
+| `INFLUX_BUCKET` | No | InfluxDB bucket (default: `eero`) |
 
 ---
 
 ## Contributing & Local Development
 
-Want to test local changes without standing up the entire Docker cluster? `eero-stats` has an open-source friendly `Makefile`.
+### First-Time Setup
 
-0. **First Time Setup**: Run `make setup`. This configures Git to use our local `.githooks` directory, ensuring `golangci-lint` automatically validates your code before any commits are processed!
-1. **Hygiene**: Run `make tidy` to format your Go files and clean `go.mod`.
-2. **Linting**: Run `make lint` to enforce standard coding conventions using `golangci-lint`.
-3. **Build**: Run `make build` to locally compile the daemon into `.bin/eero-stats`.
+```bash
+make setup    # Configures Git hooks for pre-commit linting
+```
 
-### License
-This project is open-sourced under the permission [MIT License](LICENSE).
+### Development Workflow
+
+| Command | Description |
+| :--- | :--- |
+| `make tidy` | Run `go mod tidy` and `go fmt` |
+| `make lint` | Run `golangci-lint` |
+| `make build` | Compile the daemon to `bin/eero-stats` |
+| `make dashboard` | Regenerate the Grafana dashboard JSON |
+| `make docker-up` | Start the full Docker Compose stack |
+| `make docker-down` | Stop all containers |
+| `make clean` | Remove build artifacts |
+
+### Extending the Poller
+
+To add new metrics, create writer methods on `*Poller` in `internal/poller/writers.go` and call them from the appropriate polling tier in `internal/poller/poller.go`. Each writer follows a consistent pattern:
+
+1. Build a `tags` map (indexed dimensions)
+2. Build a `fields` map (metric values)
+3. Write with `influxdb2.NewPoint(measurement, tags, fields, timestamp)`
+
+---
+
+## License
+
+This project is open-sourced under the [MIT License](LICENSE).

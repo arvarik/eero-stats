@@ -1,3 +1,6 @@
+// Package auth handles authentication with the Eero cloud API. It attempts to
+// restore a previously cached session token from disk and falls back to an
+// interactive 2FA login flow via standard input when no valid session exists.
 package auth
 
 import (
