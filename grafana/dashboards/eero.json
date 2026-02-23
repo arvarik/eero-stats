@@ -44,19 +44,19 @@
           },
           "mappings": [
             {
+              "type": "value",
               "options": {
-                "false": {
+                "0": {
                   "color": "red",
                   "index": 1,
                   "text": "Offline"
                 },
-                "true": {
+                "1": {
                   "color": "green",
                   "index": 0,
                   "text": "Online"
                 }
-              },
-              "type": "value"
+              }
             }
           ],
           "thresholds": {
@@ -93,12 +93,12 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"isp_up\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"isp_up\")\n  |> last()\n  |> map(fn: (r) => ({r with _value: if r._value == true then 1 else 0}))"
         }
       ],
       "title": "ISP Status",
@@ -116,22 +116,19 @@
           },
           "mappings": [
             {
+              "type": "value",
               "options": {
-                "match": "exact",
-                "pattern": "online"
-              },
-              "type": "regex",
-              "text": "Online",
-              "color": "green"
-            },
-            {
-              "options": {
-                "match": "exact",
-                "pattern": "connected"
-              },
-              "type": "regex",
-              "text": "Connected",
-              "color": "green"
+                "connected": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Connected"
+                },
+                "disconnected": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "Disconnected"
+                }
+              }
             }
           ],
           "thresholds": {
@@ -168,12 +165,12 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"eero_network_status\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"eero_network_status\")\n  |> last()"
         }
       ],
       "title": "Eero Mesh Status",
