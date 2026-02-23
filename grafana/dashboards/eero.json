@@ -395,7 +395,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.node_name}"
         },
         "overrides": []
       },
@@ -465,7 +466,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.node_name}"
         },
         "overrides": []
       },
@@ -534,7 +536,8 @@
                 "value": 4
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.node_name}"
         },
         "overrides": []
       },
@@ -643,7 +646,7 @@
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"frequency\"])\n  |> count()\n  |> map(fn: (r) => ({ r with frequency: \"Frequency \" + r.frequency }))",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"frequency\", \"frequency_unit\"])\n  |> count()\n  |> map(fn: (r) => ({\n       r with frequency:\n         if r.frequency == \"wired\" then \"Wired\"\n         else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))",
           "refId": "A",
           "datasource": {
             "type": "influxdb",
