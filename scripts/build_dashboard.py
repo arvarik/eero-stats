@@ -680,8 +680,8 @@ y += 8
 panels.append(row("⚠️ Alerts & Anomalies", y, next_id()))
 y += 1
 
-panels.append(table("Offline / Stale Devices (>24h)", Q_STALE_DEVICES, next_id(), 0, y, w=24, h=8,
-    desc="Devices that were last seen connected more than 24 hours ago. Useful for tracking unplugged or forgotten devices."))
+panels.append(table("Currently Disconnected Devices", Q_STALE_DEVICES, next_id(), 0, y, w=24, h=8,
+    desc="Devices whose most recent status within the last 25 hours is disconnected. Includes devices that went offline recently."))
 y += 8
 
 panels.append(table("Paused Devices", Q_PAUSED_DEVICES, next_id(), 0, y, w=12, h=8,

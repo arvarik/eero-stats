@@ -108,7 +108,7 @@ The first time the daemon starts, it requires a one-time 2FA verification:
 docker attach eero-stats
 ```
 
-Enter the verification code sent to your email/phone. On success, the session token is cached to `/data/app/.eero_session.json`.
+Enter the verification code sent to your email/phone. On success, the session token is cached to `./data/app/.eero_session.json`.
 
 **Detach** with `CTRL-P` then `CTRL-Q` to let the daemon continue in the background.
 
@@ -117,7 +117,7 @@ Enter the verification code sent to your email/phone. On success, the session to
 
 ### 4. View the Dashboard
 
-Open Grafana at `http://<your-ip>:3000` (login: `admin` / `admin`). The **Eero Network Telemetry** dashboard is automatically provisioned.
+Open Grafana at `http://<your-ip>:3000` (default login: `admin` / `admin`). Set `GF_ADMIN_PASSWORD` in your `.env` to use a stronger password. The **Eero Network Telemetry** dashboard is automatically provisioned.
 
 ---
 

@@ -1650,8 +1650,8 @@
     {
       "id": 70,
       "type": "table",
-      "title": "Offline / Stale Devices (>24h)",
-      "description": "Devices that were last seen connected more than 24 hours ago. Useful for tracking unplugged or forgotten devices.",
+      "title": "Currently Disconnected Devices",
+      "description": "Devices whose most recent status within the last 25 hours is disconnected. Includes devices that went offline recently.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
