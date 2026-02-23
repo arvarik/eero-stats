@@ -33,20 +33,14 @@ RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
 
-# Add an unprivileged user to execute the app securely
-RUN addgroup -S eero && adduser -S eero -G eero
-
 # The daemon expects /app/data to be mounted for session persistence
-RUN mkdir -p /app/data && chown -R eero:eero /app
-
-# Drop root privileges by shifting user context
-USER eero
+RUN mkdir -p /app/data
 
 # Copy the compiled binary from the builder stage
-COPY --chown=eero:eero --from=builder /app-binary /app/eero-stats
-
-# Ensure it's executable
+COPY --from=builder /app-binary /app/eero-stats
 RUN chmod +x /app/eero-stats
 
-# Command to run
+# User is controlled via docker-compose.yml user: directive
+# so we do NOT hardcode USER here — this allows running as any UID.
+
 CMD ["/app/eero-stats"]
