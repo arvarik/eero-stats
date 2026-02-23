@@ -1302,7 +1302,7 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "import \"date\"\nfrom(bucket: \"eero\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group()\n  |> aggregateWindow(every: 3m, fn: count, createEmpty: false)\n  |> map(fn: (r) => ({_time: r._time, hour: string(v: date.hour(t: r._time)), _value: r._value}))\n  |> group(columns: [\"hour\"])\n  |> mean()\n  |> group()\n  |> map(fn: (r) => ({hour: r.hour + \":00\", avg_connected_devices: int(v: r._value)}))\n  |> sort(columns: [\"hour\"])"
+          "query": "import \"date\"\nimport \"timezone\"\noption location = timezone.location(name: \"America/Los_Angeles\")\nhours12 = [\"12 AM\",\"1 AM\",\"2 AM\",\"3 AM\",\"4 AM\",\"5 AM\",\"6 AM\",\"7 AM\",\"8 AM\",\"9 AM\",\"10 AM\",\"11 AM\",\n           \"12 PM\",\"1 PM\",\"2 PM\",\"3 PM\",\"4 PM\",\"5 PM\",\"6 PM\",\"7 PM\",\"8 PM\",\"9 PM\",\"10 PM\",\"11 PM\"]\nfrom(bucket: \"eero\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group()\n  |> aggregateWindow(every: 3m, fn: count, createEmpty: false)\n  |> map(fn: (r) => ({\n       _time: r._time,\n       h: date.hour(t: r._time),\n       _value: r._value\n     }))\n  |> group(columns: [\"h\"])\n  |> mean()\n  |> group()\n  |> map(fn: (r) => ({\n       sort_key: (if r.h < 10 then \"0\" else \"\") + string(v: r.h),\n       hour: hours12[r.h],\n       avg_connected_devices: int(v: r._value)\n     }))\n  |> sort(columns: [\"sort_key\"])\n  |> drop(columns: [\"sort_key\"])"
         }
       ]
     },
