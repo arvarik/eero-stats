@@ -890,79 +890,6 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "false": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "Offline"
-                },
-                "true": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "Online"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 47
-      },
-      "id": 34,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calc": "lastNotNull",
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
-          "refId": "A",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "P951FEA4DE68E13C5"
-          }
-        }
-      ],
-      "title": "Device State",
-      "type": "stat",
-      "description": "Whether the selected device is currently connected to your network."
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "P951FEA4DE68E13C5"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -983,9 +910,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 18,
-        "x": 6,
+        "h": 14,
+        "w": 24,
+        "x": 0,
         "y": 47
       },
       "id": 36,
@@ -996,8 +923,8 @@
           "placement": "bottom",
           "showLegend": true
         },
-        "mergeValues": true,
-        "rowHeight": 0.9,
+        "mergeValues": false,
+        "rowHeight": 0.6,
         "showValue": "auto",
         "tooltip": {
           "mode": "single",
@@ -1074,15 +1001,16 @@
                 "value": -60
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.device_name}"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 12,
+        "w": 24,
         "x": 0,
-        "y": 53
+        "y": 61
       },
       "id": 38,
       "options": {
@@ -1117,116 +1045,35 @@
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "Data Rate",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "bps"
-        },
-        "overrides": []
-      },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 53
-      },
-      "id": 40,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.0.0",
-      "targets": [
-        {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and (r._field == \"rx_rate_bps\" or r._field == \"tx_rate_bps\"))\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> group(columns: [\"_field\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
-          "refId": "A",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "P951FEA4DE68E13C5"
-          }
-        }
-      ],
-      "title": "Negotiated Link Rate",
-      "type": "timeseries",
-      "description": "\u26a0\ufe0f PHY link rate (not traffic). Rx = download capable speed, Tx = upload capable speed at the radio layer."
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "P951FEA4DE68E13C5"
-      },
-      "gridPos": {
-        "h": 7,
         "w": 24,
         "x": 0,
-        "y": 61
+        "y": 73
       },
       "id": 42,
       "options": {
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
       "pluginVersion": "10.0.0",
       "targets": [
         {
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> keep(columns: [\"_time\", \"device_name\", \"mac\", \"node_name\", \"connection_type\", \"frequency\", \"frequency_unit\"])\n  |> last(column: \"_time\")",
-          "refId": "A",
           "datasource": {
             "type": "influxdb",
             "uid": "P951FEA4DE68E13C5"
-          }
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\")\n  |> filter(fn: (r) => r.device_name =~ /^${Device:regex}$/)\n  |> group(columns: [\"device_name\"])\n  |> last()\n  |> map(fn: (r) => ({\n       _time: r._time,\n       device: r.device_name,\n       mac: r.mac,\n       connected_to: r.node_name,\n       connection: r.connection_type,\n       band: if r.frequency == \"\" or r.frequency == \"wired\" then \"Wired\" else \"Frequency \" + r.frequency + \" \" + r.frequency_unit\n     }))\n  |> group()"
         }
       ],
       "title": "Device Metadata",
       "type": "table",
-      "description": "Current connection snapshot: connected node, MAC, frequency band, and connection type."
+      "description": "Current connection snapshot: connected node, MAC, frequency band, and connection type.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     }
   ],
   "refresh": "1m",
