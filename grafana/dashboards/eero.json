@@ -118,12 +118,12 @@
             {
               "type": "value",
               "options": {
-                "connected": {
+                "1": {
                   "color": "green",
                   "index": 0,
                   "text": "Connected"
                 },
-                "disconnected": {
+                "0": {
                   "color": "red",
                   "index": 1,
                   "text": "Disconnected"
@@ -170,7 +170,7 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"eero_network_status\")\n  |> last()"
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_network_health\" and r._field == \"eero_network_status\")\n  |> last()\n  |> map(fn: (r) => ({r with _value: if r._value == \"connected\" then 1 else 0}))"
         }
       ],
       "title": "Eero Mesh Status",
