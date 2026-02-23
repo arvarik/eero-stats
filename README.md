@@ -83,7 +83,7 @@ cd eero-stats
 cp .env.example .env
 ```
 
-Edit `.env` to include your Eero login email or phone number.
+Edit `.env` to include your Eero login email or phone number, your host user's `PUID`/`PGID` (run `id` to find them), and adjust `GRAFANA_PORT`/`INFLUX_PORT` if the defaults conflict with existing services.
 
 ### 2. Start the Stack
 
@@ -94,11 +94,7 @@ make docker-up
 This launches the daemon, InfluxDB, and Grafana containers.
 
 > [!NOTE]
-> **Linux Users:** If you encounter a `permission denied` error with Docker, add your user to the `docker` group:
-> ```bash
-> sudo usermod -aG docker $USER
-> ```
-> Log out and back in for the change to take effect.
+> **TrueNAS / NAS Users:** If `usermod` fails, just prefix Docker commands with `sudo` instead (e.g., `sudo docker compose up -d`).
 
 ### 3. Authenticate (First Boot Only)
 
@@ -117,7 +113,7 @@ Enter the verification code sent to your email/phone. On success, the session to
 
 ### 4. View the Dashboard
 
-Open Grafana at `http://<your-ip>:3000` (default login: `admin` / `admin`). Set `GF_ADMIN_PASSWORD` in your `.env` to use a stronger password. The **Eero Network Telemetry** dashboard is automatically provisioned.
+Open Grafana at `http://<your-ip>:<GRAFANA_PORT>` (default: `3000`, login: `admin` / your `GF_ADMIN_PASSWORD`). The **Eero Network Telemetry** dashboard is automatically provisioned.
 
 ---
 
