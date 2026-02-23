@@ -265,6 +265,7 @@ Q_NODE_UPTIME = (
     '  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_node_timeseries" and r._field == "status")\n'
     '  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n'
+    '  |> keep(columns: ["_time", "_value", "node_name"])\n'
     '  |> group(columns: ["node_name"])\n'
     '  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n'
     '  |> yield(name: "last")'
@@ -336,6 +337,7 @@ Q_NODE_DIVE_POWER = (
     '  |> filter(fn: (r) => r._measurement == "eero_node_timeseries" and\n'
     '      (r._field == "power_source" or r._field == "connection_type"))\n'
     '  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n'
+    '  |> keep(columns: ["_time", "_value", "node_name", "_field"])\n'
     '  |> group(columns: ["node_name", "_field"])\n'
     '  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)'
 )
@@ -371,21 +373,14 @@ Q_BAND_STEERING = (
 
 Q_PEAK_HOURS = (
     'import "date"\n'
-    'data = from(bucket: "eero")\n'
+    'from(bucket: "eero")\n'
     '  |> range(start: -7d)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_client_timeseries" and r._field == "connected" and r._value == true)\n'
-    'dataCount = data\n'
-    '  |> count()\n'
-    '  |> findRecord(fn: (key) => true, idx: 0)\n'
-    'result = if dataCount._value > 0 then\n'
-    '  data\n'
-    '    |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n'
-    '    |> map(fn: (r) => ({r with hour: string(v: date.hour(t: r._time))}))\n'
-    '    |> group(columns: ["hour"])\n'
-    '    |> mean(column: "_value")\n'
-    'else\n'
-    '  data |> limit(n: 0)\n'
-    'result |> yield(name: "peak_hours")'
+    '  |> group()\n'
+    '  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n'
+    '  |> map(fn: (r) => ({r with _value: r._value, _field: string(v: date.hour(t: r._time)) + ":00"}))\n'
+    '  |> group(columns: ["_field"])\n'
+    '  |> mean()'
 )
 
 Q_SIGNAL_HEATMAP = (
@@ -628,7 +623,7 @@ panels.append(timeseries("Band Steering Efficiency", Q_BAND_STEERING, next_id(),
     desc="Number of connected devices on each frequency band over time. Shows how well devices are distributed across 2.4/5/6 GHz.",
     display_name="${__field.labels.frequency}"))
 
-panels.append(bar_chart("Peak Hours (7-day avg)", Q_PEAK_HOURS, next_id(), 16, y, w=8, h=8,
+panels.append(table("Peak Hours (7-day avg)", Q_PEAK_HOURS, next_id(), 16, y, w=8, h=8,
     desc="Average number of devices connected per hour of day over the last 7 days. Useful for spotting peak network usage patterns."))
 y += 8
 
