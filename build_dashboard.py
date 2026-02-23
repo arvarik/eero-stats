@@ -219,15 +219,34 @@ Q_ISP_DL = (
 
 Q_ISP_UL = Q_ISP_DL.replace("speed_down_mbps", "speed_up_mbps")
 
-Q_NET_CONFIG = (
+Q_NET_CONFIG_GEO = (
     'from(bucket: "eero")\n'
     '  |> range(start: -25h)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_network_config")\n'
     '  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")\n'
-    '  |> keep(columns: ["_time", "geoip_city", "geoip_isp", "geoip_org", "geoip_region_name",\n'
-    '      "geoip_timezone", "public_ip", "dns_mode", "dhcp_mode", "wan_type",\n'
-    '      "band_steering", "wpa3_enabled", "upnp_enabled", "guest_network_name",\n'
+    '  |> keep(columns: ["_time", "geoip_city", "geoip_region_name", "geoip_timezone",\n'
+    '      "geoip_isp", "geoip_org", "public_ip", "wan_type"])\n'
+    '  |> last(column: "_time")'
+)
+
+Q_NET_CONFIG_SECURITY = (
+    'from(bucket: "eero")\n'
+    '  |> range(start: -25h)\n'
+    '  |> filter(fn: (r) => r._measurement == "eero_network_config")\n'
+    '  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")\n'
+    '  |> keep(columns: ["_time", "wpa3_enabled", "band_steering", "upnp_enabled",\n'
     '      "double_nat", "wireless_mode", "mlo_mode"])\n'
+    '  |> last(column: "_time")'
+)
+
+Q_NET_CONFIG_DNS = (
+    'from(bucket: "eero")\n'
+    '  |> range(start: -25h)\n'
+    '  |> filter(fn: (r) => r._measurement == "eero_network_config")\n'
+    '  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")\n'
+    '  |> keep(columns: ["_time", "dns_mode", "dhcp_mode",\n'
+    '      "guest_network_name", "premium_status", "premium_tier",\n'
+    '      "dns_policies_enabled", "ad_block_enabled"])\n'
     '  |> last(column: "_time")'
 )
 
@@ -246,6 +265,7 @@ Q_NODE_UPTIME = (
     '  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_node_timeseries" and r._field == "status")\n'
     '  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n'
+    '  |> group(columns: ["node_name"])\n'
     '  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n'
     '  |> yield(name: "last")'
 )
@@ -312,11 +332,12 @@ Q_NODE_DIVE_DEVICES_TABLE = (
 
 Q_NODE_DIVE_POWER = (
     'from(bucket: "eero")\n'
-    '  |> range(start: -5m)\n'
+    '  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_node_timeseries" and\n'
     '      (r._field == "power_source" or r._field == "connection_type"))\n'
     '  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n'
-    '  |> last()'
+    '  |> group(columns: ["node_name", "_field"])\n'
+    '  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)'
 )
 
 # Client health
@@ -350,14 +371,21 @@ Q_BAND_STEERING = (
 
 Q_PEAK_HOURS = (
     'import "date"\n'
-    'from(bucket: "eero")\n'
+    'data = from(bucket: "eero")\n'
     '  |> range(start: -7d)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_client_timeseries" and r._field == "connected" and r._value == true)\n'
-    '  |> group(columns: ["_time"])\n'
-    '  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n'
-    '  |> map(fn: (r) => ({r with hour: string(v: date.hour(t: r._time))}))\n'
-    '  |> group(columns: ["hour"])\n'
-    '  |> mean(column: "_value")'
+    'dataCount = data\n'
+    '  |> count()\n'
+    '  |> findRecord(fn: (key) => true, idx: 0)\n'
+    'result = if dataCount._value > 0 then\n'
+    '  data\n'
+    '    |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n'
+    '    |> map(fn: (r) => ({r with hour: string(v: date.hour(t: r._time))}))\n'
+    '    |> group(columns: ["hour"])\n'
+    '    |> mean(column: "_value")\n'
+    'else\n'
+    '  data |> limit(n: 0)\n'
+    'result |> yield(name: "peak_hours")'
 )
 
 Q_SIGNAL_HEATMAP = (
@@ -523,9 +551,16 @@ y += 4
 panels.append(row("🌐 ISP & Connectivity", y, next_id()))
 y += 1
 
-panels.append(table("Network Configuration", Q_NET_CONFIG, next_id(), 0, y, w=24, h=7,
-    desc="Live network config snapshot: GeoIP for WAN IP, DNS/DHCP setup, security features, and guest network status."))
-y += 7
+panels.append(table("🌍 Location & ISP", Q_NET_CONFIG_GEO, next_id(), 0, y, w=12, h=5,
+    desc="GeoIP location data for the WAN public IP: city, region, ISP, and WAN type."))
+
+panels.append(table("🔒 Security & Wireless", Q_NET_CONFIG_SECURITY, next_id(), 12, y, w=12, h=5,
+    desc="Wireless security settings: WPA3, band steering, UPnP, NAT, and wireless mode."))
+y += 5
+
+panels.append(table("🔧 DNS, DHCP & Services", Q_NET_CONFIG_DNS, next_id(), 0, y, w=24, h=5,
+    desc="DNS/DHCP configuration, guest network, Eero Secure status, and ad blocking settings."))
+y += 5
 
 # ── 3. MESH NODE HEALTH ───────────────────────────────────────────────────────
 panels.append(row("📡 Eero Node Telemetry ($Node)", y, next_id()))
@@ -535,12 +570,15 @@ panels.append(timeseries("Connected Clients per Node", Q_NODE_CLIENTS, next_id()
     display_name="${__field.labels.node_name}",
     desc="Number of Wi-Fi clients currently associated to each Eero node. Useful for spotting imbalanced load across your mesh."))
 
-panels.append(state_timeline("Node Uptime", Q_NODE_UPTIME, next_id(), 12, y, w=12, h=8,
-    desc="Per-node online/offline status over time. 'green' from the eero API means fully operational."))
+p_uptime = state_timeline("Node Uptime", Q_NODE_UPTIME, next_id(), 12, y, w=12, h=8,
+    desc="Per-node online/offline status over time. 'green' from the eero API means fully operational.")
 
-# Fix uptime mappings
-panels[-1]["fieldConfig"]["defaults"]["mappings"] = UPTIME_MAPPINGS
-panels[-1]["fieldConfig"]["defaults"]["thresholds"] = UPTIME_THRESHOLDS
+# Fix uptime mappings + displayName + suppress bar text
+p_uptime["fieldConfig"]["defaults"]["mappings"] = UPTIME_MAPPINGS
+p_uptime["fieldConfig"]["defaults"]["thresholds"] = UPTIME_THRESHOLDS
+p_uptime["fieldConfig"]["defaults"]["displayName"] = "${__field.labels.node_name}"
+p_uptime["options"]["showValue"] = "never"
+panels.append(p_uptime)
 y += 8
 
 panels.append(bargauge("Mesh Backhaul Quality", Q_MESH_QUALITY, next_id(), 0, y, w=12, h=6,
@@ -571,8 +609,11 @@ y += 8
 panels.append(table("Currently Connected Devices", Q_NODE_DIVE_DEVICES_TABLE, next_id(), 0, y, w=14, h=8,
     desc="Devices currently associated to the selected node, with their MAC address and Wi-Fi band."))
 
-panels.append(state_timeline("Node Power & Backhaul", Q_NODE_DIVE_POWER, next_id(), 14, y, w=10, h=8,
-    desc="Power source (USB, PoE) and backhaul connection type (wired/wireless) for the selected node over time."))
+p_power = state_timeline("Node Power & Backhaul", Q_NODE_DIVE_POWER, next_id(), 14, y, w=10, h=8,
+    desc="Power source (USB, PoE) and backhaul connection type (wired/wireless) for the selected node over time.")
+p_power["fieldConfig"]["defaults"]["displayName"] = "${__field.labels.node_name} ${__field.labels._field}"
+p_power["options"]["showValue"] = "never"
+panels.append(p_power)
 y += 8
 
 # ── 5. CLIENT DEVICE OVERVIEW ─────────────────────────────────────────────────
@@ -591,18 +632,18 @@ panels.append(bar_chart("Peak Hours (7-day avg)", Q_PEAK_HOURS, next_id(), 16, y
     desc="Average number of devices connected per hour of day over the last 7 days. Useful for spotting peak network usage patterns."))
 y += 8
 
-panels.append(timeseries("Network-Wide Signal Strength", Q_SIGNAL_HEATMAP, next_id(), 0, y, w=24, h=8,
+panels.append(timeseries("Network-Wide Signal Strength", Q_SIGNAL_HEATMAP, next_id(), 0, y, w=24, h=16,
     display_name="${__field.labels.device_name} → ${__field.labels.node_name} (${__field.labels.connection_type})",
     unit="dBm",
     desc="RSSI (dBm) for every wireless client. Closer to 0 is better; below -75 dBm is poor."))
-y += 8
+y += 16
 
-gtp = timeseries("Global Throughput Rates ($Frequency)", Q_GLOBAL_THROUGHPUT, next_id(), 0, y, w=24, h=8,
+gtp = timeseries("Global Throughput Rates ($Frequency)", Q_GLOBAL_THROUGHPUT, next_id(), 0, y, w=24, h=16,
     display_name="${__field.labels.device_name}",
     unit="bps",
     desc="⚠️ Negotiated Wi-Fi link (PHY) rates — NOT real-time throughput. Shows the max speed the radio association is capable of. A device shows a high rate even when idle.")
 panels.append(gtp)
-y += 8
+y += 16
 
 # ── 6. DEVICE DEEP DIVE ───────────────────────────────────────────────────────
 panels.append(row("🕵️ Specific Device Deep-Dive ($Device)", y, next_id()))
@@ -626,13 +667,14 @@ y += 8
 panels.append(row("⚠️ Alerts & Anomalies", y, next_id()))
 y += 1
 
-panels.append(table("Offline / Stale Devices (>24h)", Q_STALE_DEVICES, next_id(), 0, y, w=10, h=8,
+panels.append(table("Offline / Stale Devices (>24h)", Q_STALE_DEVICES, next_id(), 0, y, w=24, h=8,
     desc="Devices that were last seen connected more than 24 hours ago. Useful for tracking unplugged or forgotten devices."))
+y += 8
 
-panels.append(table("Paused Devices", Q_PAUSED_DEVICES, next_id(), 10, y, w=7, h=8,
+panels.append(table("Paused Devices", Q_PAUSED_DEVICES, next_id(), 0, y, w=12, h=8,
     desc="Devices currently paused by an Eero profile (parental controls or manual pause)."))
 
-panels.append(table("Blocked Devices", Q_BLACKLISTED, next_id(), 17, y, w=7, h=8,
+panels.append(table("Blocked Devices", Q_BLACKLISTED, next_id(), 12, y, w=12, h=8,
     desc="Devices that have been blocked/blacklisted from the network."))
 y += 8
 

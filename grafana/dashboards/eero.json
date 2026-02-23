@@ -453,8 +453,8 @@
     {
       "id": 20,
       "type": "table",
-      "title": "Network Configuration",
-      "description": "Live network config snapshot: GeoIP for WAN IP, DNS/DHCP setup, security features, and guest network status.",
+      "title": "\ud83c\udf0d Location & ISP",
+      "description": "GeoIP location data for the WAN public IP: city, region, ISP, and WAN type.",
       "datasource": {
         "type": "influxdb",
         "uid": "P951FEA4DE68E13C5"
@@ -464,8 +464,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 24,
+        "h": 5,
+        "w": 12,
         "x": 0,
         "y": 6
       },
@@ -481,25 +481,95 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"geoip_city\", \"geoip_isp\", \"geoip_org\", \"geoip_region_name\",\n      \"geoip_timezone\", \"public_ip\", \"dns_mode\", \"dhcp_mode\", \"wan_type\",\n      \"band_steering\", \"wpa3_enabled\", \"upnp_enabled\", \"guest_network_name\",\n      \"double_nat\", \"wireless_mode\", \"mlo_mode\"])\n  |> last(column: \"_time\")"
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"geoip_city\", \"geoip_region_name\", \"geoip_timezone\",\n      \"geoip_isp\", \"geoip_org\", \"public_ip\", \"wan_type\"])\n  |> last(column: \"_time\")"
         }
       ]
     },
     {
       "id": 22,
+      "type": "table",
+      "title": "\ud83d\udd12 Security & Wireless",
+      "description": "Wireless security settings: WPA3, band steering, UPnP, NAT, and wireless mode.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"wpa3_enabled\", \"band_steering\", \"upnp_enabled\",\n      \"double_nat\", \"wireless_mode\", \"mlo_mode\"])\n  |> last(column: \"_time\")"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "type": "table",
+      "title": "\ud83d\udd27 DNS, DHCP & Services",
+      "description": "DNS/DHCP configuration, guest network, Eero Secure status, and ad blocking settings.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "P951FEA4DE68E13C5"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "P951FEA4DE68E13C5"
+          },
+          "refId": "A",
+          "query": "from(bucket: \"eero\")\n  |> range(start: -25h)\n  |> filter(fn: (r) => r._measurement == \"eero_network_config\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"dns_mode\", \"dhcp_mode\",\n      \"guest_network_name\", \"premium_status\", \"premium_tier\",\n      \"dns_policies_enabled\", \"ad_block_enabled\"])\n  |> last(column: \"_time\")"
+        }
+      ]
+    },
+    {
+      "id": 26,
       "type": "row",
       "title": "\ud83d\udce1 Eero Node Telemetry ($Node)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 16
       },
       "collapsed": false,
       "panels": []
     },
     {
-      "id": 24,
+      "id": 28,
       "type": "timeseries",
       "title": "Connected Clients per Node",
       "description": "Number of Wi-Fi clients currently associated to each Eero node. Useful for spotting imbalanced load across your mesh.",
@@ -544,7 +614,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 17
       },
       "options": {
         "legend": {
@@ -571,7 +641,7 @@
       ]
     },
     {
-      "id": 26,
+      "id": 30,
       "type": "state-timeline",
       "title": "Node Uptime",
       "description": "Per-node online/offline status over time. 'green' from the eero API means fully operational.",
@@ -623,7 +693,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.node_name}"
         },
         "overrides": []
       },
@@ -631,7 +702,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 17
       },
       "options": {
         "alignValue": "center",
@@ -642,7 +713,7 @@
         },
         "mergeValues": false,
         "rowHeight": 0.6,
-        "showValue": "auto",
+        "showValue": "never",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -656,12 +727,12 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"status\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")"
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and r._field == \"status\")\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> group(columns: [\"node_name\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")"
         }
       ]
     },
     {
-      "id": 28,
+      "id": 32,
       "type": "bargauge",
       "title": "Mesh Backhaul Quality",
       "description": "Quality of wireless backhaul link between each node and the gateway (1\u20135 bars). 5=excellent, 1=critical. N/A for wired backhaul nodes.",
@@ -701,7 +772,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 25
       },
       "options": {
         "displayMode": "lcd",
@@ -726,7 +797,7 @@
       ]
     },
     {
-      "id": 30,
+      "id": 34,
       "type": "table",
       "title": "Eero Hardware Details",
       "description": "Static inventory: serial, model, IP, firmware version, and whether each node is the primary gateway.",
@@ -742,7 +813,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 25
       },
       "options": {
         "showHeader": true,
@@ -761,7 +832,7 @@
       ]
     },
     {
-      "id": 32,
+      "id": 36,
       "type": "table",
       "title": "Firmware Status",
       "description": "Current firmware on each node. 'update_available = true' rows indicate a pending update.",
@@ -777,7 +848,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 31
       },
       "options": {
         "showHeader": true,
@@ -796,20 +867,20 @@
       ]
     },
     {
-      "id": 34,
+      "id": 38,
       "type": "row",
       "title": "\ud83d\udd2c Node Deep-Dive ($Node)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 36
       },
       "collapsed": false,
       "panels": []
     },
     {
-      "id": 36,
+      "id": 40,
       "type": "timeseries",
       "title": "Clients on Node (History)",
       "description": "Historical client count for the selected node over the chosen time range.",
@@ -854,7 +925,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 34
+        "y": 37
       },
       "options": {
         "legend": {
@@ -881,7 +952,7 @@
       ]
     },
     {
-      "id": 38,
+      "id": 42,
       "type": "timeseries",
       "title": "Mesh Quality History",
       "description": "Mesh backhaul quality bars (1\u20135) over time for the selected node. Drops may indicate interference or physical obstructions.",
@@ -926,7 +997,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 37
       },
       "options": {
         "legend": {
@@ -953,7 +1024,7 @@
       ]
     },
     {
-      "id": 40,
+      "id": 44,
       "type": "table",
       "title": "Currently Connected Devices",
       "description": "Devices currently associated to the selected node, with their MAC address and Wi-Fi band.",
@@ -969,7 +1040,7 @@
         "h": 8,
         "w": 14,
         "x": 0,
-        "y": 42
+        "y": 45
       },
       "options": {
         "showHeader": true,
@@ -988,7 +1059,7 @@
       ]
     },
     {
-      "id": 42,
+      "id": 46,
       "type": "state-timeline",
       "title": "Node Power & Backhaul",
       "description": "Power source (USB, PoE) and backhaul connection type (wired/wireless) for the selected node over time.",
@@ -1014,7 +1085,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "displayName": "${__field.labels.node_name} ${__field.labels._field}"
         },
         "overrides": []
       },
@@ -1022,7 +1094,7 @@
         "h": 8,
         "w": 10,
         "x": 14,
-        "y": 42
+        "y": 45
       },
       "options": {
         "alignValue": "center",
@@ -1033,7 +1105,7 @@
         },
         "mergeValues": false,
         "rowHeight": 0.6,
-        "showValue": "auto",
+        "showValue": "never",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1047,25 +1119,25 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "from(bucket: \"eero\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and\n      (r._field == \"power_source\" or r._field == \"connection_type\"))\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> last()"
+          "query": "from(bucket: \"eero\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"eero_node_timeseries\" and\n      (r._field == \"power_source\" or r._field == \"connection_type\"))\n  |> filter(fn: (r) => r.node_name =~ /^${Node:regex}$/)\n  |> group(columns: [\"node_name\", \"_field\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)"
         }
       ]
     },
     {
-      "id": 44,
+      "id": 48,
       "type": "row",
       "title": "\ud83d\udcf1 Client Device Health ($Frequency)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 53
       },
       "collapsed": false,
       "panels": []
     },
     {
-      "id": 46,
+      "id": 50,
       "type": "piechart",
       "title": "Band Distribution",
       "description": "Breakdown of currently connected clients by Wi-Fi band. Wired = ethernet-connected clients.",
@@ -1097,7 +1169,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 51
+        "y": 54
       },
       "options": {
         "displayLabels": [
@@ -1128,7 +1200,7 @@
       ]
     },
     {
-      "id": 48,
+      "id": 52,
       "type": "timeseries",
       "title": "Band Steering Efficiency",
       "description": "Number of connected devices on each frequency band over time. Shows how well devices are distributed across 2.4/5/6 GHz.",
@@ -1173,7 +1245,7 @@
         "h": 8,
         "w": 10,
         "x": 6,
-        "y": 51
+        "y": 54
       },
       "options": {
         "legend": {
@@ -1200,7 +1272,7 @@
       ]
     },
     {
-      "id": 50,
+      "id": 54,
       "type": "barchart",
       "title": "Peak Hours (7-day avg)",
       "description": "Average number of devices connected per hour of day over the last 7 days. Useful for spotting peak network usage patterns.",
@@ -1234,7 +1306,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 51
+        "y": 54
       },
       "options": {
         "barWidth": 0.97,
@@ -1260,12 +1332,12 @@
             "uid": "P951FEA4DE68E13C5"
           },
           "refId": "A",
-          "query": "import \"date\"\nfrom(bucket: \"eero\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\n  |> group(columns: [\"_time\"])\n  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n  |> map(fn: (r) => ({r with hour: string(v: date.hour(t: r._time))}))\n  |> group(columns: [\"hour\"])\n  |> mean(column: \"_value\")"
+          "query": "import \"date\"\ndata = from(bucket: \"eero\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"eero_client_timeseries\" and r._field == \"connected\" and r._value == true)\ndataCount = data\n  |> count()\n  |> findRecord(fn: (key) => true, idx: 0)\nresult = if dataCount._value > 0 then\n  data\n    |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n    |> map(fn: (r) => ({r with hour: string(v: date.hour(t: r._time))}))\n    |> group(columns: [\"hour\"])\n    |> mean(column: \"_value\")\nelse\n  data |> limit(n: 0)\nresult |> yield(name: \"peak_hours\")"
         }
       ]
     },
     {
-      "id": 52,
+      "id": 56,
       "type": "timeseries",
       "title": "Network-Wide Signal Strength",
       "description": "RSSI (dBm) for every wireless client. Closer to 0 is better; below -75 dBm is poor.",
@@ -1307,10 +1379,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 24,
         "x": 0,
-        "y": 59
+        "y": 62
       },
       "options": {
         "legend": {
@@ -1337,7 +1409,7 @@
       ]
     },
     {
-      "id": 54,
+      "id": 58,
       "type": "timeseries",
       "title": "Global Throughput Rates ($Frequency)",
       "description": "\u26a0\ufe0f Negotiated Wi-Fi link (PHY) rates \u2014 NOT real-time throughput. Shows the max speed the radio association is capable of. A device shows a high rate even when idle.",
@@ -1379,10 +1451,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 24,
         "x": 0,
-        "y": 67
+        "y": 78
       },
       "options": {
         "legend": {
@@ -1409,20 +1481,20 @@
       ]
     },
     {
-      "id": 56,
+      "id": 60,
       "type": "row",
       "title": "\ud83d\udd75\ufe0f Specific Device Deep-Dive ($Device)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 75
+        "y": 94
       },
       "collapsed": false,
       "panels": []
     },
     {
-      "id": 58,
+      "id": 62,
       "type": "state-timeline",
       "title": "AP Roaming Events",
       "description": "Which Eero node the selected device is associated with over time. Changes indicate a roaming event.",
@@ -1456,7 +1528,7 @@
         "h": 20,
         "w": 24,
         "x": 0,
-        "y": 76
+        "y": 95
       },
       "options": {
         "alignValue": "center",
@@ -1486,7 +1558,7 @@
       ]
     },
     {
-      "id": 60,
+      "id": 64,
       "type": "timeseries",
       "title": "Device Signal Strength",
       "description": "RSSI (dBm) for the selected device over time. Closer to 0 is better; below -75 dBm is poor.",
@@ -1531,7 +1603,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 96
+        "y": 115
       },
       "options": {
         "legend": {
@@ -1558,7 +1630,7 @@
       ]
     },
     {
-      "id": 62,
+      "id": 66,
       "type": "table",
       "title": "Device Metadata",
       "description": "Current connection snapshot for the selected device: connected node, MAC, frequency band, and connection type.",
@@ -1574,7 +1646,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 108
+        "y": 127
       },
       "options": {
         "showHeader": true,
@@ -1593,20 +1665,20 @@
       ]
     },
     {
-      "id": 64,
+      "id": 68,
       "type": "row",
       "title": "\u26a0\ufe0f Alerts & Anomalies",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 116
+        "y": 135
       },
       "collapsed": false,
       "panels": []
     },
     {
-      "id": 66,
+      "id": 70,
       "type": "table",
       "title": "Offline / Stale Devices (>24h)",
       "description": "Devices that were last seen connected more than 24 hours ago. Useful for tracking unplugged or forgotten devices.",
@@ -1620,9 +1692,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 10,
+        "w": 24,
         "x": 0,
-        "y": 117
+        "y": 136
       },
       "options": {
         "showHeader": true,
@@ -1641,7 +1713,7 @@
       ]
     },
     {
-      "id": 68,
+      "id": 72,
       "type": "table",
       "title": "Paused Devices",
       "description": "Devices currently paused by an Eero profile (parental controls or manual pause).",
@@ -1655,9 +1727,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 7,
-        "x": 10,
-        "y": 117
+        "w": 12,
+        "x": 0,
+        "y": 144
       },
       "options": {
         "showHeader": true,
@@ -1676,7 +1748,7 @@
       ]
     },
     {
-      "id": 70,
+      "id": 74,
       "type": "table",
       "title": "Blocked Devices",
       "description": "Devices that have been blocked/blacklisted from the network.",
@@ -1690,9 +1762,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 7,
-        "x": 17,
-        "y": 117
+        "w": 12,
+        "x": 12,
+        "y": 144
       },
       "options": {
         "showHeader": true,
