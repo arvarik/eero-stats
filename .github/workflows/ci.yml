@@ -29,6 +29,9 @@ jobs:
       - name: Vet
         run: go vet ./cmd/... ./internal/...
 
+      - name: Test
+        run: go test -race -count=1 ./...
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         continue-on-error: true

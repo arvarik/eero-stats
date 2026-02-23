@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/arvarik/eero-stats/internal/config"
@@ -18,12 +19,15 @@ import (
 	"github.com/arvarik/eero-go/eero"
 )
 
-var SessionFile = "/app/data/.eero_session.json"
+// sessionFilePath is the path where the Eero session token is cached.
+// It defaults to the Docker container path and falls back to a local
+// development path if the container directory doesn't exist.
+var sessionFilePath = "/app/data/.eero_session.json"
 
 func init() {
-	// Fallback to local path if not running inside the Docker container
+	// Fallback to local path if not running inside the Docker container.
 	if _, err := os.Stat("/app/data"); os.IsNotExist(err) {
-		SessionFile = "data/app/.eero_session.json"
+		sessionFilePath = "data/app/.eero_session.json"
 	}
 }
 
@@ -39,7 +43,7 @@ func Init(ctx context.Context, cfg *config.Config) (*eero.Client, error) {
 		return nil, fmt.Errorf("creating eero client: %w", err)
 	}
 
-	// 1. Check if session exists and is valid
+	// 1. Check if session exists and is valid.
 	if err := restoreSession(client); err == nil {
 		slog.Info("Restored cached session. Validating...")
 		if _, err := client.Account.Get(ctx); err == nil {
@@ -51,7 +55,7 @@ func Init(ctx context.Context, cfg *config.Config) (*eero.Client, error) {
 		slog.Info("No valid cached session found, starting interactive login")
 	}
 
-	// 2. Interactive CLI flow
+	// 2. Interactive CLI flow.
 	if err := interactiveLogin(ctx, client, cfg.EeroLogin); err != nil {
 		return nil, fmt.Errorf("interactive login failed: %w", err)
 	}
@@ -60,7 +64,7 @@ func Init(ctx context.Context, cfg *config.Config) (*eero.Client, error) {
 }
 
 func restoreSession(client *eero.Client) error {
-	data, err := os.ReadFile(SessionFile)
+	data, err := os.ReadFile(sessionFilePath)
 	if err != nil {
 		return err
 	}
@@ -73,14 +77,14 @@ func restoreSession(client *eero.Client) error {
 		return errors.New("empty user_token in session file")
 	}
 
-	// Hydrate the HTTP client
+	// Hydrate the HTTP client with the cached token.
 	return client.SetSessionCookie(sess.UserToken)
 }
 
 func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) error {
 	reader := bufio.NewReader(os.Stdin)
 
-	// Step 1: Login challenge
+	// Step 1: Login challenge.
 	identifier := loginID
 	if identifier == "" {
 		fmt.Print("Enter your eero email or phone: ")
@@ -102,7 +106,7 @@ func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) 
 	fmt.Println("========================================")
 	fmt.Print("Enter verification code: ")
 
-	// Step 2: Verify code
+	// Step 2: Verify code.
 	code, err := reader.ReadString('\n')
 	if err != nil {
 		return fmt.Errorf("reading verification code: %w", err)
@@ -114,19 +118,31 @@ func interactiveLogin(ctx context.Context, client *eero.Client, loginID string) 
 	}
 	slog.Info("Authenticated successfully!")
 
-	// 3. Save the session
-	sess := sessionData{UserToken: loginResp.UserToken}
-	data, err := json.MarshalIndent(sess, "", "  ")
-	if err != nil {
-		slog.Warn("Could not marshal session data", "error", err)
-		return nil
-	}
-
-	if err := os.WriteFile(SessionFile, data, 0600); err != nil {
-		slog.Warn("Could not cache session to disk", "error", err, "file", SessionFile)
+	// 3. Save the session to disk for future restarts.
+	if err := saveSession(loginResp.UserToken); err != nil {
+		slog.Warn("Could not cache session to disk", "error", err, "file", sessionFilePath)
 	} else {
-		slog.Info("Session cached securely", "file", SessionFile)
+		slog.Info("Session cached securely", "file", sessionFilePath)
 	}
 
 	return nil
+}
+
+// saveSession persists the user token to disk, creating the parent directory
+// if it doesn't already exist.
+func saveSession(userToken string) error {
+	sess := sessionData{UserToken: userToken}
+	data, err := json.MarshalIndent(sess, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshalling session: %w", err)
+	}
+
+	// Ensure the parent directory exists (e.g., first run before Docker
+	// volume is fully initialized).
+	dir := filepath.Dir(sessionFilePath)
+	if err := os.MkdirAll(dir, 0750); err != nil {
+		return fmt.Errorf("creating session directory %s: %w", dir, err)
+	}
+
+	return os.WriteFile(sessionFilePath, data, 0600)
 }

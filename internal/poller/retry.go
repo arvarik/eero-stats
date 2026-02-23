@@ -23,7 +23,12 @@ func (p *Poller) withRetry(ctx context.Context, op func() error) error {
 
 		if attempt < maxRetries-1 {
 			backoff := time.Duration(math.Pow(2, float64(attempt+1))) * time.Second
-			slog.Warn(fmt.Sprintf("API call failed (attempt %d/%d). Retrying in %v...", attempt+1, maxRetries, backoff), "error", err)
+			slog.Warn("API call failed, retrying",
+				"attempt", attempt+1,
+				"max_retries", maxRetries,
+				"backoff", backoff,
+				"error", err,
+			)
 
 			select {
 			case <-time.After(backoff):

@@ -17,6 +17,7 @@ import (
 	"github.com/arvarik/eero-stats/internal/config"
 	"github.com/arvarik/eero-stats/internal/db"
 	"github.com/arvarik/eero-stats/internal/poller"
+	"github.com/arvarik/eero-stats/internal/version"
 )
 
 func main() {
@@ -25,7 +26,11 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 	slog.SetDefault(logger)
-	slog.Info("eero-stats daemon starting up")
+	slog.Info("eero-stats daemon starting up",
+		"version", version.Version,
+		"commit", version.Commit,
+		"built", version.BuildDate,
+	)
 
 	// Initialize context with graceful shutdown hooked to SIGTERM (Docker)
 	// and SIGINT (Ctrl+C).
@@ -37,6 +42,7 @@ func main() {
 	go func() {
 		sig := <-sigCh
 		slog.Info("Received termination signal, shutting down gracefully", "signal", sig)
+		signal.Stop(sigCh) // Deregister to allow force-kill on second signal.
 		cancel()
 	}()
 
