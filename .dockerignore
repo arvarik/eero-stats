@@ -1,0 +1,4 @@
+data/
+fix_dashboard*.py
+.env
+*.md
