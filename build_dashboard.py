@@ -376,14 +376,13 @@ Q_PEAK_HOURS = (
     'from(bucket: "eero")\n'
     '  |> range(start: -7d)\n'
     '  |> filter(fn: (r) => r._measurement == "eero_client_timeseries" and r._field == "connected" and r._value == true)\n'
-    '  |> group(columns: ["device_name"])\n'
-    '  |> aggregateWindow(every: 1h, fn: count, createEmpty: false)\n'
     '  |> group()\n'
+    '  |> aggregateWindow(every: 3m, fn: count, createEmpty: false)\n'
     '  |> map(fn: (r) => ({_time: r._time, hour: string(v: date.hour(t: r._time)), _value: r._value}))\n'
     '  |> group(columns: ["hour"])\n'
-    '  |> sum()\n'
+    '  |> mean()\n'
     '  |> group()\n'
-    '  |> map(fn: (r) => ({hour: r.hour + ":00", connected_devices: r._value}))\n'
+    '  |> map(fn: (r) => ({hour: r.hour + ":00", avg_connected_devices: int(v: r._value)}))\n'
     '  |> sort(columns: ["hour"])'
 )
 
