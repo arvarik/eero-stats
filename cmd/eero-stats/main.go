@@ -1,3 +1,7 @@
+// Binary eero-stats is a daemon that polls the Eero mesh network API on a
+// tiered schedule and writes the collected metrics to InfluxDB for visualization
+// in Grafana. It handles graceful shutdown via SIGTERM/SIGINT for clean
+// container lifecycle management.
 package main
 
 import (
@@ -13,17 +17,23 @@ import (
 	"github.com/arvarik/eero-stats/internal/config"
 	"github.com/arvarik/eero-stats/internal/db"
 	"github.com/arvarik/eero-stats/internal/poller"
+	"github.com/arvarik/eero-stats/internal/version"
 )
 
 func main() {
-	// Configure structured logger
+	// Configure structured logger with human-readable text output.
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 	slog.SetDefault(logger)
-	slog.Info("eero-stats daemon starting up")
+	slog.Info("eero-stats daemon starting up",
+		"version", version.Version,
+		"commit", version.Commit,
+		"built", version.BuildDate,
+	)
 
-	// 1. Initialize context with graceful shutdown hooked to SIGTERM (Docker standard)
+	// Initialize context with graceful shutdown hooked to SIGTERM (Docker)
+	// and SIGINT (Ctrl+C).
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -32,24 +42,26 @@ func main() {
 	go func() {
 		sig := <-sigCh
 		slog.Info("Received termination signal, shutting down gracefully", "signal", sig)
+		signal.Stop(sigCh) // Deregister to allow force-kill on second signal.
 		cancel()
 	}()
 
-	// 2. Load Environment Config
+	// Load configuration from environment variables (and optional .env file).
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("Failed to load configuration", "error", err)
 		os.Exit(1)
 	}
 
-	// 3. Authenticate with Eero
+	// Authenticate with the Eero cloud API (restores cached session or
+	// performs interactive 2FA login via stdin).
 	eeroClient, err := auth.Init(ctx, cfg)
 	if err != nil {
 		slog.Error("Failed to authenticate with Eero", "error", err)
 		os.Exit(1)
 	}
 
-	// Fetch account to get the primary network URL
+	// Fetch the account to discover the primary network URL.
 	acct, err := eeroClient.Account.Get(ctx)
 	if err != nil {
 		slog.Error("Failed to fetch Eero account details", "error", err)
@@ -61,11 +73,12 @@ func main() {
 	}
 	networkURL := acct.Networks.Data[0].URL
 
-	// 4. Spin up NVMe-Optimized InfluxDB Client
+	// Initialize the InfluxDB client with NVMe-optimized batching settings.
 	influxClient := db.NewInfluxClient(cfg)
-	defer luxClientShutdown(ctx, influxClient)
+	defer influxClientShutdown(influxClient)
 
-	// 5. Start the Polling Daemon
+	// Start the polling daemon in a goroutine so the main goroutine can
+	// block on context cancellation for orderly shutdown.
 	var wg sync.WaitGroup
 	daemon := poller.NewPoller(eeroClient, influxClient, networkURL)
 
@@ -75,7 +88,6 @@ func main() {
 		daemon.Start(ctx)
 	}()
 
-	// Block until graceful shutdown via context cancellation
 	slog.Info("Application initialized and polling started")
 	<-ctx.Done()
 
@@ -85,8 +97,9 @@ func main() {
 	slog.Info("Main daemon loop exiting")
 }
 
-func luxClientShutdown(ctx context.Context, client *db.InfluxClient) {
-	// Add a timeout for the shutdown if needed
+// influxClientShutdown gracefully flushes buffered writes and closes the
+// InfluxDB connection with a 15-second timeout.
+func influxClientShutdown(client *db.InfluxClient) {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 

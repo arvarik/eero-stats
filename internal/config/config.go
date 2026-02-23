@@ -1,3 +1,6 @@
+// Package config loads and validates the runtime configuration from environment
+// variables and an optional .env file. All required settings (Eero credentials
+// and InfluxDB connection parameters) are validated at startup.
 package config
 
 import (
@@ -18,7 +21,7 @@ type Config struct {
 
 // Load reads config from environment variables and an optional .env file.
 func Load() (*Config, error) {
-	// Attempt to load .env file; it's okay if it doesn't exist 
+	// Attempt to load .env file; it's okay if it doesn't exist
 	// (e.g., config passed via Docker env vars)
 	_ = godotenv.Load()
 

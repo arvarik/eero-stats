@@ -1,21 +1,27 @@
 #!/bin/sh
 #
-# Pre-commit hook to run golangci-lint
+# Pre-commit hook: runs go vet and golangci-lint before allowing commits.
+
+echo "=> Running go vet before commit..."
+go vet ./...
+VET_EXIT=$?
+
+if [ $VET_EXIT -ne 0 ]; then
+    echo ""
+    echo "❌ ERROR: go vet failed! Please fix the issues above."
+    exit 1
+fi
 
 echo "=> Running golangci-lint before commit..."
-
-# Execute the lint target from the Makefile
 make lint
+LINT_EXIT=$?
 
-# Capture the exit code
-EXIT_CODE=$?
-
-if [ $EXIT_CODE -ne 0 ]; then
+if [ $LINT_EXIT -ne 0 ]; then
     echo ""
     echo "❌ ERROR: golangci-lint failed! Please fix the styling errors above."
     echo "To bypass this check (not recommended), use 'git commit --no-verify'."
     exit 1
 fi
 
-echo "✅ Linting passed. Proceeding with commit..."
+echo "✅ All checks passed. Proceeding with commit..."
 exit 0

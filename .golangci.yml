@@ -1,0 +1,39 @@
+# golangci-lint configuration for eero-stats
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    # Default linters (explicit for clarity)
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    # Extra quality linters
+    - gofmt
+    - goimports
+    - misspell
+    - gosec
+    - prealloc
+    - gocritic
+
+linters-settings:
+  govet:
+    enable-all: true
+  gosec:
+    excludes:
+      - G104 # Duplicates errcheck
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+
+issues:
+  exclude-rules:
+    # Relax gosec in test files
+    - path: _test\.go
+      linters:
+        - gosec

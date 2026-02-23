@@ -11,15 +11,22 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
+# Copy source code and build the binary with version metadata
 COPY . .
 
-# Download dependencies and build
-RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app-binary ./cmd/eero-stats
+ARG VERSION=dev
+ARG COMMIT=none
+ARG BUILD_DATE=unknown
+
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags "-s -w \
+    -X github.com/arvarik/eero-stats/internal/version.Version=${VERSION} \
+    -X github.com/arvarik/eero-stats/internal/version.Commit=${COMMIT} \
+    -X github.com/arvarik/eero-stats/internal/version.BuildDate=${BUILD_DATE}" \
+    -o /app-binary ./cmd/eero-stats
 
 # -- Stage 2: Runtime --
-FROM alpine:latest
+FROM alpine:3.21
 
 # Install CA certificates for HTTPS requests to Eero API and timezone data
 RUN apk --no-cache add ca-certificates tzdata
