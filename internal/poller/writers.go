@@ -99,7 +99,7 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 		}
 
 		pt := influxdb2.NewPoint("eero_client_timeseries", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -129,7 +129,7 @@ func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 		}
 
 		pt := influxdb2.NewPoint("eero_node_timeseries", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -146,7 +146,7 @@ func (p *Poller) writeNetworkHealth(net *eero.NetworkDetails) {
 	}
 
 	pt := influxdb2.NewPoint("eero_network_health", tags, fields, time.Now())
-	p.influx.WriteAPI.WritePoint(pt)
+	p.influx.WritePoint(pt)
 }
 
 // ---------------------------------------------------------------------------
@@ -182,7 +182,7 @@ func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 		}
 
 		pt := influxdb2.NewPoint("eero_node_metadata", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -228,7 +228,7 @@ func (p *Poller) writeClientMetadata(devices []eero.Device) {
 		}
 
 		pt := influxdb2.NewPoint("eero_client_metadata", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -254,7 +254,7 @@ func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 		}
 
 		pt := influxdb2.NewPoint("eero_profile_mappings", tags, fields, now)
-		p.influx.WriteAPI.WritePoint(pt)
+		p.influx.WritePoint(pt)
 	}
 }
 
@@ -274,7 +274,7 @@ func (p *Poller) writeISPSpeeds(net *eero.NetworkDetails) {
 	}
 
 	pt := influxdb2.NewPoint("eero_isp_speed", tags, fields, time.Now())
-	p.influx.WriteAPI.WritePoint(pt)
+	p.influx.WritePoint(pt)
 }
 
 // writeNetworkConfig writes a comprehensive snapshot of the network configuration
@@ -326,5 +326,5 @@ func (p *Poller) writeNetworkConfig(net *eero.NetworkDetails) {
 	}
 
 	pt := influxdb2.NewPoint("eero_network_config", tags, fields, time.Now())
-	p.influx.WriteAPI.WritePoint(pt)
+	p.influx.WritePoint(pt)
 }
