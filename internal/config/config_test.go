@@ -7,7 +7,7 @@ import (
 
 func TestLoad(t *testing.T) {
 	// Save and clear environment to avoid leaking real values into tests.
-	envKeys := []string{"EERO_LOGIN", "INFLUX_URL", "INFLUX_TOKEN", "INFLUX_ORG", "INFLUX_BUCKET"}
+	envKeys := []string{"EERO_LOGIN", "EERO_SESSION_PATH", "INFLUX_URL", "INFLUX_TOKEN", "INFLUX_ORG", "INFLUX_BUCKET"}
 	saved := make(map[string]string, len(envKeys))
 	for _, k := range envKeys {
 		saved[k] = os.Getenv(k)
@@ -108,6 +108,15 @@ func TestLoad(t *testing.T) {
 			}
 			if cfg.InfluxURL != tt.env["INFLUX_URL"] {
 				t.Errorf("InfluxURL = %q, want %q", cfg.InfluxURL, tt.env["INFLUX_URL"])
+			}
+
+			// Verify EeroSessionPath defaults correctly.
+			expectedSessionPath := tt.env["EERO_SESSION_PATH"]
+			if expectedSessionPath == "" {
+				expectedSessionPath = "data/app/.eero_session.json"
+			}
+			if cfg.EeroSessionPath != expectedSessionPath {
+				t.Errorf("EeroSessionPath = %q, want %q", cfg.EeroSessionPath, expectedSessionPath)
 			}
 		})
 	}

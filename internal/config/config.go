@@ -37,11 +37,7 @@ func Load() (*Config, error) {
 
 	// Set default session path if not provided.
 	if cfg.EeroSessionPath == "" {
-		if _, err := os.Stat("/app/data"); err == nil {
-			cfg.EeroSessionPath = "/app/data/.eero_session.json"
-		} else {
-			cfg.EeroSessionPath = "data/app/.eero_session.json"
-		}
+		cfg.EeroSessionPath = "data/app/.eero_session.json"
 	}
 
 	if cfg.EeroLogin == "" {

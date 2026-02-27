@@ -31,6 +31,9 @@ FROM alpine:3.21
 # Install CA certificates for HTTPS requests to Eero API and timezone data
 RUN apk --no-cache add ca-certificates tzdata
 
+# Default session path for Docker environment
+ENV EERO_SESSION_PATH=/app/data/.eero_session.json
+
 WORKDIR /app
 
 # The daemon expects /app/data to be mounted for session persistence
