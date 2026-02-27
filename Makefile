@@ -45,9 +45,9 @@ dashboard:
 docker-up:
 	@echo "=> Starting Docker Compose environment..."
 	@mkdir -p data/app data/grafana
-	@if [ "$$(stat -c '%u' data/app 2>/dev/null)" != "100" ]; then \
+	@if [ "$$(stat -c '%u' data/app 2>/dev/null)" != "1000" ]; then \
 		echo "=> Fixing data/app ownership for container user..."; \
-		sudo chown -R 100:101 data/app; \
+		sudo chown -R 1000:1000 data/app; \
 	fi
 	@if [ "$$(stat -c '%u' data/grafana 2>/dev/null)" != "472" ]; then \
 		echo "=> Fixing data/grafana ownership for container user..."; \

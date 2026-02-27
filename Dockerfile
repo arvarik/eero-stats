@@ -31,16 +31,21 @@ FROM alpine:3.21
 # Install CA certificates for HTTPS requests to Eero API and timezone data
 RUN apk --no-cache add ca-certificates tzdata
 
+# Create a non-root user and group
+RUN addgroup -S eero -g 1000 && \
+    adduser -S eero -u 1000 -G eero
+
 WORKDIR /app
 
 # The daemon expects /app/data to be mounted for session persistence
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data && \
+    chown -R eero:eero /app
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /app-binary /app/eero-stats
+# Copy the compiled binary from the builder stage with correct ownership
+COPY --from=builder --chown=eero:eero /app-binary /app/eero-stats
 RUN chmod +x /app/eero-stats
 
-# User is controlled via docker-compose.yml user: directive
-# so we do NOT hardcode USER here — this allows running as any UID.
+# Use the non-root user
+USER eero
 
 CMD ["/app/eero-stats"]
