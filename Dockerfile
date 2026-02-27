@@ -34,6 +34,8 @@ RUN apk --no-cache add ca-certificates tzdata
 # Create a non-root user and group
 RUN addgroup -S eero -g 1000 && \
     adduser -S eero -u 1000 -G eero
+# Default session path for Docker environment
+ENV EERO_SESSION_PATH=/app/data/.eero_session.json
 
 WORKDIR /app
 
