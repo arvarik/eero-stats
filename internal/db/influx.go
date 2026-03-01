@@ -4,7 +4,6 @@
 package db
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/arvarik/eero-stats/internal/config"
@@ -48,8 +47,8 @@ func NewInfluxClient(cfg *config.Config) *InfluxClient {
 }
 
 // Shutdown flushes all buffered writes to disk and closes the InfluxDB
-// connection. The provided context can be used for timeout control.
-func (i *InfluxClient) Shutdown(ctx context.Context) {
+// connection.
+func (i *InfluxClient) Shutdown() {
 	slog.Info("Flushing InfluxDB memory buffers to disk...")
 	i.WriteAPI.Flush()
 	i.Client.Close()

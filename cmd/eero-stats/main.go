@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/arvarik/eero-stats/internal/auth"
 	"github.com/arvarik/eero-stats/internal/config"
@@ -50,6 +49,7 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("Failed to load configuration", "error", err)
+		//nolint:gocritic // expected exit on init failure
 		os.Exit(1)
 	}
 
@@ -58,6 +58,7 @@ func main() {
 	eeroClient, err := auth.Init(ctx, cfg)
 	if err != nil {
 		slog.Error("Failed to authenticate with Eero", "error", err)
+		//nolint:gocritic // expected exit on init failure
 		os.Exit(1)
 	}
 
@@ -65,17 +66,19 @@ func main() {
 	acct, err := eeroClient.Account.Get(ctx)
 	if err != nil {
 		slog.Error("Failed to fetch Eero account details", "error", err)
+		//nolint:gocritic // expected exit on init failure
 		os.Exit(1)
 	}
 	if acct.Networks.Count == 0 {
 		slog.Error("No networks found on this account")
+		//nolint:gocritic // expected exit on init failure
 		os.Exit(1)
 	}
 	networkURL := acct.Networks.Data[0].URL
 
 	// Initialize the InfluxDB client with NVMe-optimized batching settings.
 	influxClient := db.NewInfluxClient(cfg)
-	defer influxClientShutdown(influxClient)
+	defer influxClient.Shutdown()
 
 	// Start the polling daemon in a goroutine so the main goroutine can
 	// block on context cancellation for orderly shutdown.
@@ -96,13 +99,4 @@ func main() {
 	wg.Wait()
 
 	slog.Info("Main daemon loop exiting")
-}
-
-// influxClientShutdown gracefully flushes buffered writes and closes the
-// InfluxDB connection with a 15-second timeout.
-func influxClientShutdown(client *db.InfluxClient) {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client.Shutdown(shutdownCtx)
 }
