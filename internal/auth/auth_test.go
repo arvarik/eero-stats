@@ -63,3 +63,58 @@ func TestRestoreSession(t *testing.T) {
 		}
 	})
 }
+
+func TestSaveSession(t *testing.T) {
+	tempDir := t.TempDir()
+
+	t.Run("Valid Session Save", func(t *testing.T) {
+		sessionPath := filepath.Join(tempDir, "new_dir", "session.json")
+		userToken := "valid_token_456"
+
+		if err := saveSession(sessionPath, userToken); err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+
+		// Verify the file was created and contains the correct data
+		data, err := os.ReadFile(sessionPath)
+		if err != nil {
+			t.Fatalf("failed to read created session file: %v", err)
+		}
+
+		expectedJSON := "{\n  \"user_token\": \"valid_token_456\"\n}"
+		if string(data) != expectedJSON {
+			t.Errorf("expected JSON:\n%s\ngot:\n%s", expectedJSON, string(data))
+		}
+	})
+
+	t.Run("Error Creating Directory", func(t *testing.T) {
+		// Create a file where the directory should be
+		fileAsDir := filepath.Join(tempDir, "file_as_dir")
+		if err := os.WriteFile(fileAsDir, []byte("not a dir"), 0644); err != nil {
+			t.Fatalf("failed to create dummy file: %v", err)
+		}
+
+		sessionPath := filepath.Join(fileAsDir, "session.json")
+		userToken := "token"
+
+		if err := saveSession(sessionPath, userToken); err == nil {
+			t.Errorf("expected error when parent path is a file, got nil")
+		} else if err.Error()[:26] != "creating session directory" {
+			t.Errorf("expected error starting with 'creating session directory', got '%v'", err)
+		}
+	})
+
+	t.Run("Error Writing File", func(t *testing.T) {
+		// Create a directory where the file should be
+		dirAsFile := filepath.Join(tempDir, "dir_as_file.json")
+		if err := os.MkdirAll(dirAsFile, 0750); err != nil {
+			t.Fatalf("failed to create dummy dir: %v", err)
+		}
+
+		userToken := "token"
+
+		if err := saveSession(dirAsFile, userToken); err == nil {
+			t.Errorf("expected error when target is a directory, got nil")
+		}
+	})
+}
