@@ -30,9 +30,11 @@ func (p *Poller) withRetry(ctx context.Context, op func() error) error {
 				"error", err,
 			)
 
+			t := time.NewTimer(backoff)
 			select {
-			case <-time.After(backoff):
+			case <-t.C:
 			case <-ctx.Done():
+				t.Stop()
 				return ctx.Err()
 			}
 		}

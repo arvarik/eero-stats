@@ -83,3 +83,17 @@ func TestWithRetry_ContextCancellation(t *testing.T) {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
+
+func BenchmarkWithRetry_ContextCancellation(b *testing.B) {
+	p := newTestPoller()
+	errFail := errors.New("always fail")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately to hit the ctx.Done() case
+		_ = p.withRetry(ctx, func() error {
+			return errFail
+		})
+	}
+}
