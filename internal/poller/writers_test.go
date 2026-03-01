@@ -136,6 +136,154 @@ func TestParseSignalDBm(t *testing.T) {
 	}
 }
 
+func TestWriteNodeTimeSeries(t *testing.T) {
+	mockWriter := newMockMetricWriter()
+	p := &Poller{influx: mockWriter}
+
+	net := &eero.NetworkDetails{
+		Eeros: eero.NetworkEeros{
+			Data: []eero.EeroNode{
+				{
+					Serial:                "A123",
+					Location:              "Living Room",
+					Model:                 "eero Pro 6",
+					ConnectedClientsCount: 5,
+					MeshQualityBars:       4,
+					HeartbeatOK:           true,
+					Status:                "online",
+					State:                 "connected",
+					UsingWan:              true,
+					PowerInfo: eero.PowerInfo{
+						PowerSource: "ac",
+					},
+					ConnectionType: "wired",
+					LedOn:          true,
+				},
+				{
+					Serial:                "B456",
+					Location:              "Bedroom",
+					Model:                 "eero 6",
+					ConnectedClientsCount: 2,
+					MeshQualityBars:       3,
+					HeartbeatOK:           false,
+					Status:                "offline",
+					State:                 "disconnected",
+					UsingWan:              false,
+					PowerInfo: eero.PowerInfo{
+						PowerSource: "battery",
+					},
+					ConnectionType: "wireless",
+					LedOn:          false,
+				},
+			},
+		},
+	}
+
+	p.writeNodeTimeSeries(net)
+
+	if mockWriter.pointCount() != 2 {
+		t.Fatalf("expected 2 points, got %d", mockWriter.pointCount())
+	}
+
+	// Verify Node 1
+	pt1 := mockWriter.points[0]
+	if pt1.Name() != "eero_node_timeseries" {
+		t.Errorf("expected measurement eero_node_timeseries, got %s", pt1.Name())
+	}
+
+	expectedTags1 := map[string]string{
+		"serial":    "A123",
+		"location":  "Living Room",
+		"model":     "eero Pro 6",
+		"node_name": "Living Room - eero Pro 6",
+	}
+	for k, v := range expectedTags1 {
+		found := false
+		for _, tag := range pt1.TagList() {
+			if tag.Key == k && tag.Value == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("missing or incorrect tag %s in pt1", k)
+		}
+	}
+
+	expectedFields1 := map[string]interface{}{
+		"connected_clients_count": int64(5),
+		"mesh_quality_bars":       int64(4),
+		"heartbeat_ok":            true,
+		"status":                  "online",
+		"state":                   "connected",
+		"using_wan":               true,
+		"power_source":            "ac",
+		"connection_type":         "wired",
+		"led_on":                  true,
+	}
+	for k, v := range expectedFields1 {
+		found := false
+		for _, field := range pt1.FieldList() {
+			if field.Key == k && field.Value == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("missing or incorrect field %s in pt1", k)
+		}
+	}
+
+	// Verify Node 2
+	pt2 := mockWriter.points[1]
+	if pt2.Name() != "eero_node_timeseries" {
+		t.Errorf("expected measurement eero_node_timeseries, got %s", pt2.Name())
+	}
+
+	expectedTags2 := map[string]string{
+		"serial":    "B456",
+		"location":  "Bedroom",
+		"model":     "eero 6",
+		"node_name": "Bedroom - eero 6",
+	}
+	for k, v := range expectedTags2 {
+		found := false
+		for _, tag := range pt2.TagList() {
+			if tag.Key == k && tag.Value == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("missing or incorrect tag %s in pt2", k)
+		}
+	}
+
+	expectedFields2 := map[string]interface{}{
+		"connected_clients_count": int64(2),
+		"mesh_quality_bars":       int64(3),
+		"heartbeat_ok":            false,
+		"status":                  "offline",
+		"state":                   "disconnected",
+		"using_wan":               false,
+		"power_source":            "battery",
+		"connection_type":         "wireless",
+		"led_on":                  false,
+	}
+	for k, v := range expectedFields2 {
+		found := false
+		for _, field := range pt2.FieldList() {
+			if field.Key == k && field.Value == v {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("missing or incorrect field %s in pt2", k)
+		}
+	}
+}
+
 func TestWriteISPSpeeds(t *testing.T) {
 	mockWriter := newMockMetricWriter()
 	p := &Poller{influx: mockWriter}
