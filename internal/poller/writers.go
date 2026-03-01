@@ -10,6 +10,17 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
+const (
+	MeasurementClientTimeSeries = "eero_client_timeseries"
+	MeasurementNodeTimeSeries   = "eero_node_timeseries"
+	MeasurementNetworkHealth    = "eero_network_health"
+	MeasurementNodeMetadata     = "eero_node_metadata"
+	MeasurementClientMetadata   = "eero_client_metadata"
+	MeasurementProfileMappings  = "eero_profile_mappings"
+	MeasurementISPSpeed         = "eero_isp_speed"
+	MeasurementNetworkConfig    = "eero_network_config"
+)
+
 // resolveDeviceName returns the best human-readable name for a device,
 // preferring nickname > hostname > MAC address.
 func resolveDeviceName(d *eero.Device) string {
@@ -48,7 +59,7 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 			nodeName = resolvedName
 		}
 
-		pt := influxdb2.NewPointWithMeasurement("eero_client_timeseries").
+		pt := influxdb2.NewPointWithMeasurement(MeasurementClientTimeSeries).
 			AddTag("mac", d.MAC).
 			AddTag("device_name", deviceName).
 			AddTag("source_location", d.Source.Location).
@@ -99,7 +110,7 @@ func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 	for i := range net.Eeros.Data {
 		node := &net.Eeros.Data[i]
 		nodeName := fmt.Sprintf("%s - %s", node.Location, node.Model)
-		pt := influxdb2.NewPointWithMeasurement("eero_node_timeseries").
+		pt := influxdb2.NewPointWithMeasurement(MeasurementNodeTimeSeries).
 			AddTag("serial", node.Serial).
 			AddTag("location", node.Location).
 			AddTag("model", node.Model).
@@ -122,7 +133,7 @@ func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 // writeNetworkHealth writes a single point reflecting the overall network health
 // (ISP up status, internet status, and eero mesh status).
 func (p *Poller) writeNetworkHealth(net *eero.NetworkDetails) {
-	pt := influxdb2.NewPointWithMeasurement("eero_network_health").
+	pt := influxdb2.NewPointWithMeasurement(MeasurementNetworkHealth).
 		AddTag("network_name", net.Name).
 		AddField("isp_up", net.Health.Internet.ISPUp).
 		AddField("internet_status", net.Health.Internet.Status).
@@ -143,7 +154,7 @@ func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 	for i := range net.Eeros.Data {
 		node := &net.Eeros.Data[i]
 		nodeName := fmt.Sprintf("%s - %s", node.Location, node.Model)
-		pt := influxdb2.NewPointWithMeasurement("eero_node_metadata").
+		pt := influxdb2.NewPointWithMeasurement(MeasurementNodeMetadata).
 			AddTag("serial", node.Serial).
 			AddTag("node_name", nodeName).
 			AddField("ip_address", node.IPAddress).
@@ -174,7 +185,7 @@ func (p *Poller) writeClientMetadata(devices []eero.Device) {
 		d := &devices[i]
 		deviceName := resolveDeviceName(d)
 
-		pt := influxdb2.NewPointWithMeasurement("eero_client_metadata").
+		pt := influxdb2.NewPointWithMeasurement(MeasurementClientMetadata).
 			AddTag("mac", d.MAC).
 			AddTag("device_name", deviceName).
 			AddField("device_type", d.DeviceType).
@@ -219,7 +230,7 @@ func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 			macs = append(macs, prof.Devices[j].MAC)
 		}
 
-		pt := influxdb2.NewPointWithMeasurement("eero_profile_mappings").
+		pt := influxdb2.NewPointWithMeasurement(MeasurementProfileMappings).
 			AddTag("profile_name", prof.Name).
 			AddField("devices", strings.Join(macs, ",")).
 			AddField("paused", prof.Paused).
@@ -238,7 +249,7 @@ func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 // writeISPSpeeds writes the eero-reported ISP speed test results (download/upload)
 // to InfluxDB. These are the speeds eero measures, not real-time throughput.
 func (p *Poller) writeISPSpeeds(net *eero.NetworkDetails) {
-	pt := influxdb2.NewPointWithMeasurement("eero_isp_speed").
+	pt := influxdb2.NewPointWithMeasurement(MeasurementISPSpeed).
 		AddTag("network_name", net.Name).
 		AddField("speed_down_mbps", net.Speed.Down.Value).
 		AddField("speed_up_mbps", net.Speed.Up.Value).
@@ -264,7 +275,7 @@ func (p *Poller) writeNetworkConfig(net *eero.NetworkDetails) {
 		dhcpRouter = net.Lease.DHCP.Router
 	}
 
-	pt := influxdb2.NewPointWithMeasurement("eero_network_config").
+	pt := influxdb2.NewPointWithMeasurement(MeasurementNetworkConfig).
 		AddTag("network_name", net.Name).
 		AddField("premium_status", net.PremiumStatus).
 		AddField("premium_tier", net.PremiumDetails.Tier).
