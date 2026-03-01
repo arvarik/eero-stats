@@ -187,8 +187,8 @@ func TestWriteNodeTimeSeries(t *testing.T) {
 
 	// Verify Node 1
 	pt1 := mockWriter.points[0]
-	if pt1.Name() != "eero_node_timeseries" {
-		t.Errorf("expected measurement eero_node_timeseries, got %s", pt1.Name())
+	if pt1.Name() != MeasurementNodeTimeSeries {
+		t.Errorf("expected measurement %s, got %s", MeasurementNodeTimeSeries, pt1.Name())
 	}
 
 	expectedTags1 := map[string]string{
@@ -236,8 +236,8 @@ func TestWriteNodeTimeSeries(t *testing.T) {
 
 	// Verify Node 2
 	pt2 := mockWriter.points[1]
-	if pt2.Name() != "eero_node_timeseries" {
-		t.Errorf("expected measurement eero_node_timeseries, got %s", pt2.Name())
+	if pt2.Name() != MeasurementNodeTimeSeries {
+		t.Errorf("expected measurement %s, got %s", MeasurementNodeTimeSeries, pt2.Name())
 	}
 
 	expectedTags2 := map[string]string{
@@ -301,8 +301,8 @@ func TestWriteISPSpeeds(t *testing.T) {
 	}
 
 	pt := mockWriter.points[0]
-	if pt.Name() != "eero_isp_speed" {
-		t.Errorf("expected measurement eero_isp_speed, got %s", pt.Name())
+	if pt.Name() != MeasurementISPSpeed {
+		t.Errorf("expected measurement %s, got %s", MeasurementISPSpeed, pt.Name())
 	}
 
 	// Verify tags
