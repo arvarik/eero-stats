@@ -25,8 +25,8 @@ services:
     environment:
       # Auto-bootstrap variables
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: secretpassword
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUX_USERNAME}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_PASSWORD}
       DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG:-eero-stats-org}
       DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET:-eero}
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN:-my-super-secret-auth-token-123}
