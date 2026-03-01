@@ -222,7 +222,7 @@ func (p *Poller) writeClientMetadata(devices []eero.Device) {
 func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 	now := time.Now()
 	for _, prof := range profiles {
-		var macs []string
+		macs := make([]string, 0, len(prof.Devices))
 		for j := range prof.Devices {
 			macs = append(macs, prof.Devices[j].MAC)
 		}
