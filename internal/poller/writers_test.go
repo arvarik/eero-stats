@@ -71,6 +71,71 @@ func TestResolveDeviceName(t *testing.T) {
 	}
 }
 
+func TestParseSignalDBm(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    int
+		wantErr bool
+	}{
+		{
+			name:    "valid negative signal",
+			input:   "-65 dBm",
+			want:    -65,
+			wantErr: false,
+		},
+		{
+			name:    "valid positive signal",
+			input:   "20 dBm",
+			want:    20,
+			wantErr: false,
+		},
+		{
+			name:    "missing space",
+			input:   "-65dBm",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "missing suffix",
+			input:   "-65",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "invalid number",
+			input:   "abc dBm",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "only suffix",
+			input:   " dBm",
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "empty string",
+			input:   "",
+			want:    0,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseSignalDBm(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseSignalDBm() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("parseSignalDBm() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestWriteISPSpeeds(t *testing.T) {
 	mockWriter := newMockMetricWriter()
 	p := &Poller{influx: mockWriter}

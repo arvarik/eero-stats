@@ -66,20 +66,12 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 			SetTime(now)
 
 		// Parse signal strength from the "NN dBm" string format.
-		if strings.HasSuffix(d.Connectivity.Signal, " dBm") {
-			s := strings.TrimSuffix(d.Connectivity.Signal, " dBm")
-			val, err := strconv.Atoi(s)
-			if err == nil {
-				pt.AddField("signal", val)
-			}
+		if val, err := parseSignalDBm(d.Connectivity.Signal); err == nil {
+			pt.AddField("signal", val)
 		}
 		if d.Connectivity.SignalAvg != nil {
-			if strings.HasSuffix(*d.Connectivity.SignalAvg, " dBm") {
-				s := strings.TrimSuffix(*d.Connectivity.SignalAvg, " dBm")
-				val, err := strconv.Atoi(s)
-				if err == nil {
-					pt.AddField("signal_avg", val)
-				}
+			if val, err := parseSignalDBm(*d.Connectivity.SignalAvg); err == nil {
+				pt.AddField("signal_avg", val)
 			}
 		}
 
@@ -253,6 +245,15 @@ func (p *Poller) writeISPSpeeds(net *eero.NetworkDetails) {
 		SetTime(time.Now())
 
 	p.influx.WritePoint(pt)
+}
+
+// parseSignalDBm parses signal strength from the "NN dBm" string format.
+func parseSignalDBm(s string) (int, error) {
+	if !strings.HasSuffix(s, " dBm") {
+		return 0, fmt.Errorf("invalid signal format")
+	}
+	valStr := strings.TrimSuffix(s, " dBm")
+	return strconv.Atoi(valStr)
 }
 
 // writeNetworkConfig writes a comprehensive snapshot of the network configuration
