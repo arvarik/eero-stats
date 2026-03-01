@@ -73,24 +73,14 @@ func interactiveLogin(ctx context.Context, client *eero.Client, loginID, path st
 	reader := bufio.NewReader(os.Stdin)
 
 	// Step 1: Login challenge.
-	identifier := loginID
-	if identifier == "" {
-		fmt.Print("Enter your eero email or phone: ")
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			return err
-		}
-		identifier = strings.TrimSpace(input)
-	}
-
-	loginResp, err := client.Auth.Login(ctx, identifier)
+	loginResp, err := client.Auth.Login(ctx, loginID)
 	if err != nil {
 		return fmt.Errorf("initiating login: %w", err)
 	}
 
 	fmt.Println()
 	fmt.Println("========================================")
-	fmt.Printf("  Verification code sent to %s\n", identifier)
+	fmt.Printf("  Verification code sent to %s\n", loginID)
 	fmt.Println("========================================")
 	fmt.Print("Enter verification code: ")
 
