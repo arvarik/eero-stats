@@ -40,10 +40,10 @@ func (m *MockEeroClient) ListProfiles(ctx context.Context, url string) ([]eero.P
 
 // MockMetricWriter implements MetricWriter interface for testing.
 type MockMetricWriter struct {
-	mu         sync.Mutex
+	writeReady chan struct{}
 	points     []*write.Point
-	writeReady chan struct{} // signaled on first write
 	once       sync.Once
+	mu         sync.Mutex
 }
 
 func newMockMetricWriter() *MockMetricWriter {
