@@ -92,21 +92,33 @@ def table(title, query, panel_id, x, y, w=24, h=7, desc=""):
         "targets": [{"datasource": DS, "refId": "A", "query": query}],
     }
 
-def state_timeline(title, query, panel_id, x, y, w=24, h=10, desc=""):
+def state_timeline(title, query, panel_id, x, y, w=24, h=10, desc="", display_name=None, show_value="auto", mappings=None, thresholds=None):
+    if mappings is None:
+        mappings = []
+    if thresholds is None:
+        thresholds = {"mode": "absolute", "steps": [{"color": "green", "value": None}]}
+
+    defaults = {
+        "color": {"mode": "palette-classic"},
+        "custom": {"fillOpacity": 70, "lineWidth": 0},
+        "mappings": mappings,
+        "thresholds": thresholds
+    }
+    if display_name is not None:
+        defaults["displayName"] = display_name
+
     return {
         "id": panel_id, "type": "state-timeline", "title": title,
         "description": desc,
         "datasource": DS,
         "fieldConfig": {
-            "defaults": {"color": {"mode": "palette-classic"},
-                         "custom": {"fillOpacity": 70, "lineWidth": 0},
-                         "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None}]}},
+            "defaults": defaults,
             "overrides": []
         },
         "gridPos": {"h": h, "w": w, "x": x, "y": y},
         "options": {"alignValue": "center",
                     "legend": {"displayMode": "list", "placement": "bottom", "showLegend": True},
-                    "mergeValues": False, "rowHeight": 0.6, "showValue": "auto",
+                    "mergeValues": False, "rowHeight": 0.6, "showValue": show_value,
                     "tooltip": {"mode": "single", "sort": "none"}},
         "pluginVersion": "10.0.0",
         "targets": [{"datasource": DS, "refId": "A", "query": query}],
@@ -581,15 +593,10 @@ panels.append(timeseries("Connected Clients per Node", Q_NODE_CLIENTS, next_id()
     display_name="${__field.labels.node_name}",
     desc="Number of Wi-Fi clients currently associated to each Eero node. Useful for spotting imbalanced load across your mesh."))
 
-p_uptime = state_timeline("Node Uptime", Q_NODE_UPTIME, next_id(), 12, y, w=12, h=8,
-    desc="Per-node online/offline status over time. 'green' from the eero API means fully operational.")
-
-# Fix uptime mappings + displayName + suppress bar text
-p_uptime["fieldConfig"]["defaults"]["mappings"] = UPTIME_MAPPINGS
-p_uptime["fieldConfig"]["defaults"]["thresholds"] = UPTIME_THRESHOLDS
-p_uptime["fieldConfig"]["defaults"]["displayName"] = "${__field.labels.node_name}"
-p_uptime["options"]["showValue"] = "never"
-panels.append(p_uptime)
+panels.append(state_timeline("Node Uptime", Q_NODE_UPTIME, next_id(), 12, y, w=12, h=8,
+    desc="Per-node online/offline status over time. 'green' from the eero API means fully operational.",
+    display_name="${__field.labels.node_name}", show_value="never",
+    mappings=UPTIME_MAPPINGS, thresholds=UPTIME_THRESHOLDS))
 y += 8
 
 panels.append(bargauge("Mesh Backhaul Quality", Q_MESH_QUALITY, next_id(), 0, y, w=12, h=6,
@@ -620,11 +627,9 @@ y += 8
 panels.append(table("Currently Connected Devices", Q_NODE_DIVE_DEVICES_TABLE, next_id(), 0, y, w=14, h=8,
     desc="Devices currently associated to the selected node, with their MAC address and Wi-Fi band."))
 
-p_power = state_timeline("Node Power & Backhaul", Q_NODE_DIVE_POWER, next_id(), 14, y, w=10, h=8,
-    desc="Power source (USB, PoE) and backhaul connection type (wired/wireless) for the selected node over time.")
-p_power["fieldConfig"]["defaults"]["displayName"] = "${__field.labels.node_name} ${__field.labels._field}"
-p_power["options"]["showValue"] = "never"
-panels.append(p_power)
+panels.append(state_timeline("Node Power & Backhaul", Q_NODE_DIVE_POWER, next_id(), 14, y, w=10, h=8,
+    desc="Power source (USB, PoE) and backhaul connection type (wired/wireless) for the selected node over time.",
+    display_name="${__field.labels.node_name} ${__field.labels._field}", show_value="never"))
 y += 8
 
 # ── 5. CLIENT DEVICE OVERVIEW ─────────────────────────────────────────────────
@@ -660,10 +665,9 @@ y += 16
 panels.append(row("🕵️ Specific Device Deep-Dive ($Device)", y, next_id()))
 y += 1
 
-p_roaming = state_timeline("AP Roaming Events", Q_DEV_ROAMING, next_id(), 0, y, w=24, h=20,
-    desc="Which Eero node the selected device is associated with over time. Changes indicate a roaming event.")
-p_roaming["options"]["showValue"] = "never"
-panels.append(p_roaming)
+panels.append(state_timeline("AP Roaming Events", Q_DEV_ROAMING, next_id(), 0, y, w=24, h=20,
+    desc="Which Eero node the selected device is associated with over time. Changes indicate a roaming event.",
+    show_value="never"))
 y += 20
 
 panels.append(timeseries("Device Signal Strength", Q_DEV_SIGNAL, next_id(), 0, y, w=24, h=12,
