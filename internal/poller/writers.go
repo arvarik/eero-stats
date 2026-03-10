@@ -260,10 +260,10 @@ func (p *Poller) writeISPSpeeds(net *eero.NetworkDetails) {
 
 // parseSignalDBm parses signal strength from the "NN dBm" string format.
 func parseSignalDBm(s string) (int, error) {
-	if !strings.HasSuffix(s, " dBm") {
+	valStr, found := strings.CutSuffix(s, " dBm")
+	if !found {
 		return 0, fmt.Errorf("invalid signal format")
 	}
-	valStr := strings.TrimSuffix(s, " dBm")
 	return strconv.Atoi(valStr)
 }
 
