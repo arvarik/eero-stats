@@ -1,7 +1,12 @@
 services:
   eero-stats:
-    build: .
+    image: ghcr.io/arvarik/eero-stats:latest
+    # To build locally instead of pulling from GHCR, comment the line above
+    # and uncomment the line below:
+    # build: .
     container_name: eero-stats
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     user: "${PUID:-1000}:${PGID:-1000}"
     depends_on:
       influxdb:
