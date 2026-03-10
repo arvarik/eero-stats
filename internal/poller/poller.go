@@ -159,41 +159,57 @@ func (p *Poller) pollFast(ctx context.Context) {
 func (p *Poller) pollMedium(ctx context.Context) {
 	slog.Info("Running Medium Poll (Static Metadata)")
 
-	var net *eero.NetworkDetails
-	err := p.withRetry(ctx, func() error {
-		var retryErr error
-		net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
-		return retryErr
-	})
-	if err != nil {
-		slog.Warn("Medium Poll Failed: GetNetwork", "error", err)
-	} else {
-		p.writeNodeMetadata(net)
-	}
+	var wg sync.WaitGroup
 
-	var devices []eero.Device
-	err = p.withRetry(ctx, func() error {
-		var retryErr error
-		devices, retryErr = p.client.ListDevices(ctx, p.networkURL)
-		return retryErr
-	})
-	if err != nil {
-		slog.Warn("Medium Poll Failed: ListDevices", "error", err)
-	} else {
-		p.writeClientMetadata(devices)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var net *eero.NetworkDetails
+		err := p.withRetry(ctx, func() error {
+			var retryErr error
+			net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
+			return retryErr
+		})
+		if err != nil {
+			slog.Warn("Medium Poll Failed: GetNetwork", "error", err)
+		} else {
+			p.writeNodeMetadata(net)
+		}
+	}()
 
-	var profiles []eero.Profile
-	err = p.withRetry(ctx, func() error {
-		var retryErr error
-		profiles, retryErr = p.client.ListProfiles(ctx, p.networkURL)
-		return retryErr
-	})
-	if err != nil {
-		slog.Warn("Medium Poll Failed: ListProfiles", "error", err)
-	} else {
-		p.writeProfileMappings(profiles)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var devices []eero.Device
+		err := p.withRetry(ctx, func() error {
+			var retryErr error
+			devices, retryErr = p.client.ListDevices(ctx, p.networkURL)
+			return retryErr
+		})
+		if err != nil {
+			slog.Warn("Medium Poll Failed: ListDevices", "error", err)
+		} else {
+			p.writeClientMetadata(devices)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var profiles []eero.Profile
+		err := p.withRetry(ctx, func() error {
+			var retryErr error
+			profiles, retryErr = p.client.ListProfiles(ctx, p.networkURL)
+			return retryErr
+		})
+		if err != nil {
+			slog.Warn("Medium Poll Failed: ListProfiles", "error", err)
+		} else {
+			p.writeProfileMappings(profiles)
+		}
+	}()
+
+	wg.Wait()
 }
 
 // pollSlow collects infrequently-changing data: ISP speed test results and
