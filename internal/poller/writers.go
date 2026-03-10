@@ -46,7 +46,7 @@ func (p *Poller) writeClientDeviceTimeSeries(devices []eero.Device, net *eero.Ne
 	nodeMap := make(map[string]string)
 	if net != nil {
 		for i := range net.Eeros.Data {
-			nodeMap[net.Eeros.Data[i].Location] = fmt.Sprintf("%s - %s", net.Eeros.Data[i].Location, net.Eeros.Data[i].Model)
+			nodeMap[net.Eeros.Data[i].Location] = net.Eeros.Data[i].Location + " - " + net.Eeros.Data[i].Model
 		}
 	}
 
@@ -109,7 +109,7 @@ func (p *Poller) writeNodeTimeSeries(net *eero.NetworkDetails) {
 	now := time.Now()
 	for i := range net.Eeros.Data {
 		node := &net.Eeros.Data[i]
-		nodeName := fmt.Sprintf("%s - %s", node.Location, node.Model)
+		nodeName := node.Location + " - " + node.Model
 		pt := influxdb2.NewPointWithMeasurement(MeasurementNodeTimeSeries).
 			AddTag("serial", node.Serial).
 			AddTag("location", node.Location).
@@ -153,7 +153,7 @@ func (p *Poller) writeNodeMetadata(net *eero.NetworkDetails) {
 	now := time.Now()
 	for i := range net.Eeros.Data {
 		node := &net.Eeros.Data[i]
-		nodeName := fmt.Sprintf("%s - %s", node.Location, node.Model)
+		nodeName := node.Location + " - " + node.Model
 		pt := influxdb2.NewPointWithMeasurement(MeasurementNodeMetadata).
 			AddTag("serial", node.Serial).
 			AddTag("node_name", nodeName).
