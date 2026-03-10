@@ -128,28 +128,43 @@ func (p *Poller) safePollSlow(ctx context.Context) {
 func (p *Poller) pollFast(ctx context.Context) {
 	slog.Info("Running Fast Poll (Time-Series Metrics)")
 
+	var wg sync.WaitGroup
+
 	var net *eero.NetworkDetails
-	err := p.withRetry(ctx, func() error {
-		var retryErr error
-		net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
-		return retryErr
-	})
-	if err != nil {
-		slog.Warn("Fast Poll Failed: GetNetwork", "error", err)
-	} else {
-		p.writeNodeTimeSeries(net)
-		p.writeNetworkHealth(net)
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := p.withRetry(ctx, func() error {
+			var retryErr error
+			net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
+			return retryErr
+		})
+		if err != nil {
+			slog.Warn("Fast Poll Failed: GetNetwork", "error", err)
+		} else {
+			p.writeNodeTimeSeries(net)
+			p.writeNetworkHealth(net)
+		}
+	}()
 
 	var devices []eero.Device
-	err = p.withRetry(ctx, func() error {
-		var retryErr error
-		devices, retryErr = p.client.ListDevices(ctx, p.networkURL)
-		return retryErr
-	})
-	if err != nil {
-		slog.Warn("Fast Poll Failed: ListDevices", "error", err)
-	} else {
+	var devErr error
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		devErr = p.withRetry(ctx, func() error {
+			var retryErr error
+			devices, retryErr = p.client.ListDevices(ctx, p.networkURL)
+			return retryErr
+		})
+		if devErr != nil {
+			slog.Warn("Fast Poll Failed: ListDevices", "error", devErr)
+		}
+	}()
+
+	wg.Wait()
+
+	if devErr == nil {
 		p.writeClientDeviceTimeSeries(devices, net)
 	}
 }
