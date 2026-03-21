@@ -224,18 +224,18 @@ func (p *Poller) writeClientMetadata(devices []eero.Device) {
 // settings (pause state, app blocking, safe search) to InfluxDB.
 func (p *Poller) writeProfileMappings(profiles []eero.Profile) {
 	now := time.Now()
-	for _, prof := range profiles {
-		macs := make([]string, 0, len(prof.Devices))
-		for j := range prof.Devices {
-			macs = append(macs, prof.Devices[j].MAC)
+	for i := range profiles {
+		macs := make([]string, 0, len(profiles[i].Devices))
+		for j := range profiles[i].Devices {
+			macs = append(macs, profiles[i].Devices[j].MAC)
 		}
 
 		pt := influxdb2.NewPointWithMeasurement(MeasurementProfileMappings).
-			AddTag("profile_name", prof.Name).
+			AddTag("profile_name", profiles[i].Name).
 			AddField("devices", strings.Join(macs, ",")).
-			AddField("paused", prof.Paused).
-			AddField("block_apps", prof.BlockApps).
-			AddField("safe_search_active", prof.SafeSearchActive).
+			AddField("paused", profiles[i].Paused).
+			AddField("block_apps", profiles[i].BlockApps).
+			AddField("safe_search_active", profiles[i].SafeSearchActive).
 			SetTime(now)
 
 		p.influx.WritePoint(pt)
