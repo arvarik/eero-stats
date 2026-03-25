@@ -46,19 +46,25 @@ func (p *Poller) Start(ctx context.Context) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.runTier(ctx, "Fast", 3*time.Minute, p.safePollFast)
+		p.runTier(ctx, "Fast", 3*time.Minute, func(ctx context.Context) {
+			p.safePoll(ctx, "Fast", p.pollFast)
+		})
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.runTier(ctx, "Medium", 90*time.Minute, p.safePollMedium)
+		p.runTier(ctx, "Medium", 90*time.Minute, func(ctx context.Context) {
+			p.safePoll(ctx, "Medium", p.pollMedium)
+		})
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		p.runTier(ctx, "Slow", 12*time.Hour, p.safePollSlow)
+		p.runTier(ctx, "Slow", 12*time.Hour, func(ctx context.Context) {
+			p.safePoll(ctx, "Slow", p.pollSlow)
+		})
 	}()
 
 	// Wait for all tiers to shut down.
@@ -89,35 +95,41 @@ func (p *Poller) runTier(ctx context.Context, name string, interval time.Duratio
 }
 
 // ---------------------------------------------------------------------------
-// Panic-safe wrappers
+// Polling Helpers
 // ---------------------------------------------------------------------------
 
-func (p *Poller) safePollFast(ctx context.Context) {
+// safePoll wraps a polling function with panic recovery.
+func (p *Poller) safePoll(ctx context.Context, tier string, pollFunc func(context.Context)) {
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Error("Panic recovered in Fast Poll", "panic", r)
+			slog.Error("Panic recovered in Poll", "tier", tier, "panic", r)
 		}
 	}()
-	p.pollFast(ctx)
+	pollFunc(ctx)
 }
 
-func (p *Poller) safePollMedium(ctx context.Context) {
-	defer func() {
-		if r := recover(); r != nil {
-			slog.Error("Panic recovered in Medium Poll", "panic", r)
-		}
-	}()
-	p.pollMedium(ctx)
+// pollWithRetry executes an API operation with retry logic and structured logging.
+func (p *Poller) pollWithRetry(ctx context.Context, tier, name string, op func() error, onSuccess func()) error {
+	err := p.withRetry(ctx, op)
+	if err != nil {
+		slog.Warn(tier+" Poll Failed: "+name, "error", err)
+		return err
+	}
+	if onSuccess != nil {
+		onSuccess()
+	}
+	return nil
 }
 
-func (p *Poller) safePollSlow(ctx context.Context) {
-	defer func() {
-		if r := recover(); r != nil {
-			slog.Error("Panic recovered in Slow Poll", "panic", r)
-		}
+// pollAsync executes pollWithRetry in a goroutine and tracks it with a WaitGroup.
+func (p *Poller) pollAsync(ctx context.Context, wg *sync.WaitGroup, tier, name string, op func() error, onSuccess func()) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_ = p.pollWithRetry(ctx, tier, name, op, onSuccess)
 	}()
-	p.pollSlow(ctx)
 }
+
 
 // ---------------------------------------------------------------------------
 // Tier implementations
@@ -129,38 +141,25 @@ func (p *Poller) pollFast(ctx context.Context) {
 	slog.Info("Running Fast Poll (Time-Series Metrics)")
 
 	var wg sync.WaitGroup
-
 	var net *eero.NetworkDetails
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := p.withRetry(ctx, func() error {
-			var retryErr error
-			net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
-			return retryErr
-		})
-		if err != nil {
-			slog.Warn("Fast Poll Failed: GetNetwork", "error", err)
-		} else {
-			p.writeNodeTimeSeries(net)
-			p.writeNetworkHealth(net)
-		}
-	}()
-
 	var devices []eero.Device
 	var devErr error
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		devErr = p.withRetry(ctx, func() error {
-			var retryErr error
-			devices, retryErr = p.client.ListDevices(ctx, p.networkURL)
-			return retryErr
-		})
-		if devErr != nil {
-			slog.Warn("Fast Poll Failed: ListDevices", "error", devErr)
-		}
-	}()
+
+	p.pollAsync(ctx, &wg, "Fast", "GetNetwork", func() error {
+		var err error
+		net, err = p.client.GetNetwork(ctx, p.networkURL)
+		return err
+	}, func() {
+		p.writeNodeTimeSeries(net)
+		p.writeNetworkHealth(net)
+	})
+
+	p.pollAsync(ctx, &wg, "Fast", "ListDevices", func() error {
+		var err error
+		devices, err = p.client.ListDevices(ctx, p.networkURL)
+		devErr = err
+		return err
+	}, nil)
 
 	wg.Wait()
 
@@ -176,53 +175,35 @@ func (p *Poller) pollMedium(ctx context.Context) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.pollAsync(ctx, &wg, "Medium", "GetNetwork", func() error {
 		var net *eero.NetworkDetails
-		err := p.withRetry(ctx, func() error {
-			var retryErr error
-			net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
-			return retryErr
-		})
-		if err != nil {
-			slog.Warn("Medium Poll Failed: GetNetwork", "error", err)
-		} else {
+		var err error
+		net, err = p.client.GetNetwork(ctx, p.networkURL)
+		if err == nil {
 			p.writeNodeMetadata(net)
 		}
-	}()
+		return err
+	}, nil)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.pollAsync(ctx, &wg, "Medium", "ListDevices", func() error {
 		var devices []eero.Device
-		err := p.withRetry(ctx, func() error {
-			var retryErr error
-			devices, retryErr = p.client.ListDevices(ctx, p.networkURL)
-			return retryErr
-		})
-		if err != nil {
-			slog.Warn("Medium Poll Failed: ListDevices", "error", err)
-		} else {
+		var err error
+		devices, err = p.client.ListDevices(ctx, p.networkURL)
+		if err == nil {
 			p.writeClientMetadata(devices)
 		}
-	}()
+		return err
+	}, nil)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	p.pollAsync(ctx, &wg, "Medium", "ListProfiles", func() error {
 		var profiles []eero.Profile
-		err := p.withRetry(ctx, func() error {
-			var retryErr error
-			profiles, retryErr = p.client.ListProfiles(ctx, p.networkURL)
-			return retryErr
-		})
-		if err != nil {
-			slog.Warn("Medium Poll Failed: ListProfiles", "error", err)
-		} else {
+		var err error
+		profiles, err = p.client.ListProfiles(ctx, p.networkURL)
+		if err == nil {
 			p.writeProfileMappings(profiles)
 		}
-	}()
+		return err
+	}, nil)
 
 	wg.Wait()
 }
@@ -233,16 +214,12 @@ func (p *Poller) pollSlow(ctx context.Context) {
 	slog.Info("Running Slow Poll (Config & SLA)")
 
 	var net *eero.NetworkDetails
-	err := p.withRetry(ctx, func() error {
-		var retryErr error
-		net, retryErr = p.client.GetNetwork(ctx, p.networkURL)
-		return retryErr
+	_ = p.pollWithRetry(ctx, "Slow", "GetNetwork", func() error {
+		var err error
+		net, err = p.client.GetNetwork(ctx, p.networkURL)
+		return err
+	}, func() {
+		p.writeISPSpeeds(net)
+		p.writeNetworkConfig(net)
 	})
-	if err != nil {
-		slog.Warn("Slow Poll Failed: GetNetwork", "error", err)
-		return
-	}
-
-	p.writeISPSpeeds(net)
-	p.writeNetworkConfig(net)
 }
