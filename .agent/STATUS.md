@@ -63,3 +63,20 @@
 *   Consider multi-network support (`TD-03`)
 *   Consider adding `auth_test.go` with stdin mocking (`TD-05`)
 *   Consider making Peak Hours timezone configurable (`TD-06`)
+
+---
+
+## Stub Audit Tracker
+
+_Track mock/stub status across the frontend. Populated during Build phase, cleared during Ship._
+
+| Stub Location | Type | Real API Endpoint | Status |
+|---------------|------|-------------------|--------|
+
+_No active stubs detected. The only mocks in the codebase are test-scoped doubles (`MockEeroClient` and `MockMetricWriter` in `internal/poller/poller_test.go`), which are legitimate interface-based test implementations — not frontend stubs. Populate during the next Build phase._
+
+---
+
+## Prompt Versioning Changelog
+
+N/A — No LLM prompts in this project.
