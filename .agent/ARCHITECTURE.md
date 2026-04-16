@@ -1,5 +1,11 @@
 # Architecture & System Design
 
+## 0. Project Topology
+
+**Topology:** `[frontend, backend]`
+
+_Agents: Read the corresponding Gemstack topology profiles (`frontend.md` and `backend.md`) from `~/.gemini/antigravity/global_workflows/` before proceeding with any workflow step. These profiles enforce component state coverage, state management discipline, data integrity testing, and anti-mocking rules._
+
 ## 1. System Overview
 **Name:** `eero-stats`
 **Repository:** `github.com/arvarik/eero-stats`
