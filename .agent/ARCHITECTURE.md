@@ -208,6 +208,8 @@ Loaded from `.env` via `github.com/joho/godotenv`. If no `.env` file exists, env
 | `PGID` | `1000` | Container user GID |
 | `GRAFANA_PORT` | `3000` | Grafana exposed port |
 | `INFLUX_PORT` | `8086` | InfluxDB exposed port |
+| `INFLUX_USERNAME` | `admin` | InfluxDB admin username (Docker bootstrap) |
+| `INFLUX_PASSWORD` | `secretpassword` | InfluxDB admin password (Docker bootstrap) |
 | `GF_ADMIN_PASSWORD` | `admin` | Grafana admin password |
 
 ## 9. InfluxDB Measurement Schema
