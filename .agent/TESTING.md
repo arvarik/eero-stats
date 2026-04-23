@@ -233,3 +233,10 @@ When implementing new features, copy this template:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `SCN-01` | | | | | |
 | `SCN-02` | | | | | |
+
+### Backend Route Coverage
+
+| Route | Method | Auth | Contract Test | Integration Test |
+|-------|--------|------|---------------|------------------|
+| _Fill in your routes_ | | | | |
+
